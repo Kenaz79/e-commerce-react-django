@@ -1,35 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import ProductCard from '../components/ProductCard';
+import axios from 'axios';
+import { useCart } from '../context/CartContext';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { addToCart } = useCart();
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/products/')  // Adjust API endpoint if needed
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch products');
-        return res.json();
-      })
-      .then(data => {
-        setProducts(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+    axios.get('http://localhost:8000/api/products/')
+      .then(res => setProducts(res.data))
+      .catch(err => console.error('Error fetching products:', err));
   }, []);
-
-  if (loading) return <p>Loading products...</p>;
-  if (!products.length) return <p>No products found.</p>;
 
   return (
     <div style={{ padding: '2rem' }}>
-      <h1>Products</h1>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+      <h2>Products</h2>
+      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
         {products.map(product => (
-          <ProductCard key={product.id} product={product} />
+          <div key={product.id} style={{ border: '1px solid #ccc', padding: '1rem' }}>
+            <h4>{product.name}</h4>
+            <p>{product.description}</p>
+            <p>Price: ${product.price}</p>
+            <button onClick={() => addToCart(product)}>Add to Cart</button>
+          </div>
         ))}
       </div>
     </div>
