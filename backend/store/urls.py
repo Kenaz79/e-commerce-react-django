@@ -1,15 +1,14 @@
 from django.urls import path
-from . import views
-from .views import LoginView, ProductListView, RegisterView
-from .views import SendOTPView
-from rest_framework.views import APIView
-
+from .views import (
+    LoginView, ProductListView, RegisterView, SendOTPView,
+    VerifyOTPView, main_page
+)
 
 urlpatterns = [
     path('products/', ProductListView.as_view(), name='product-list'),
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
     path('send-otp/', SendOTPView.as_view(), name='send_otp'),
-    path('verify-otp/', views.verify_otp_view, name='verify_otp'),
-    path('main/', views.main_page, name='main_page'),
+    path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),  # ✅ FIXED
+    path('main/', main_page, name='main_page'),
 ]
