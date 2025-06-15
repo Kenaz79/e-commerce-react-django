@@ -134,3 +134,14 @@ REST_FRAMEWORK = {
 }
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # For Gmail, or your email provider's SMTP server
+EMAIL_PORT = 587  # For TLS
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'youremail@gmail.com'  # Your email address
+EMAIL_HOST_PASSWORD = 'your-app-password'  # Your app password (not regular password)
+DEFAULT_FROM_EMAIL = 'youremail@gmail.com'  # Default sender email
+
+# OTP Configuration
+OTP_VALIDITY = 300  # 5 minutes in seconds
