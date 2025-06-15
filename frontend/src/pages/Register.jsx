@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import './auth.css';
 
 export default function Register() {
@@ -10,7 +11,9 @@ export default function Register() {
     confirmPassword: '',
   });
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('');
   const [showPasswords, setShowPasswords] = useState(false);
+  const navigate = useNavigate(); // ✅ initialize navigation
 
   const handleChange = e => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -20,6 +23,7 @@ export default function Register() {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       setMessage("Passwords do not match");
+      setMessageType('error');
       return;
     }
     try {
@@ -28,9 +32,28 @@ export default function Register() {
         email: formData.email,
         password: formData.password,
       });
-      setMessage(res.data.message);
+
+      await axios.post('http://localhost:8000/api/send-otp/', {
+        email: formData.email,
+      });
+
+      setMessage(res.data.message || "Registration successful!");
+      setMessageType('success');
+
+      // Optional: clear form fields
+      setFormData({
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+      });
+
+      // ✅ Redirect to OTP page with email
+      navigate('/otp', { state: { email: formData.email } });
+
     } catch (err) {
       setMessage(err.response?.data?.error || 'Error occurred');
+      setMessageType('error');
     }
   };
 
@@ -85,7 +108,11 @@ export default function Register() {
           {showPasswords ? 'Hide Passwords' : 'Show Passwords'}
         </button>
         <button type="submit">Register</button>
-        <p>{message}</p>
+        {message && (
+          <p style={{ color: messageType === 'success' ? 'green' : 'red' }}>
+            {message}
+          </p>
+        )}
       </form>
     </div>
   );
