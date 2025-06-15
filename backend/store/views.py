@@ -7,19 +7,18 @@ from rest_framework.permissions import AllowAny
 from rest_framework.parsers import JSONParser
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .otp_utils import verify_otp
+from .otp_utils import generate_otp, store_otp, verify_otp
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import Product 
 from .serializers import ProductSerializer
 
-from .otp_utils import generate_otp, store_otp, verify_otp
-
 def main_page(request):
     if not request.session.get('is_verified'):
         return redirect('send_otp')
     return render(request, 'main_page.html')
+
 
 class ProductListView(APIView):
     def get(self, request):
@@ -27,13 +26,14 @@ class ProductListView(APIView):
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
+
 class LoginView(APIView):
     permission_classes = [AllowAny]
     parser_classes = [JSONParser]
 
     def post(self, request):
-        # Basic stub login logic - replace with your actual login logic
         return Response({"message": "Login successful"}, status=status.HTTP_200_OK)
+
 
 class SendOTPView(APIView):
     permission_classes = [AllowAny]
@@ -62,22 +62,54 @@ class SendOTPView(APIView):
 
         return Response({'message': 'OTP sent to your email!'}, status=status.HTTP_200_OK)
 
-class RegisterView(APIView):
-    def post(self, request):
-        # Implement your register logic here
-        pass
-def verify_otp_view(request):
-    email = request.session.get('verification_email')
-    if not email:
-        return redirect('send_otp')
 
-    if request.method == 'POST':
-        user_otp = request.POST.get('otp')
-        if verify_otp(email, user_otp):
+class RegisterView(APIView):
+    permission_classes = [AllowAny]
+    parser_classes = [JSONParser]
+
+    def post(self, request):
+        username = request.data.get('username')
+        email = request.data.get('email')
+        password = request.data.get('password')
+
+        if not username or not email or not password:
+            return Response({'error': 'Username, email, and password are required.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            if User.objects.filter(username=username).exists():
+                return Response({'error': 'Username already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+            if User.objects.filter(email=email).exists():
+                return Response({'error': 'Email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password
+            )
+            user.save()
+
+            return Response({'message': 'User registered successfully.'}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'error': 'Registration failed. ' + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class VerifyOTPView(APIView):
+    permission_classes = [AllowAny]
+    parser_classes = [JSONParser]
+
+    def post(self, request):
+        email = request.data.get('email')
+        otp = request.data.get('otp')
+
+        if not email or not otp:
+            return Response({'error': 'Email and OTP are required.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if verify_otp(email, otp):
             request.session['is_verified'] = True
             request.session['email'] = email
-            return redirect('main_page')
+            return Response({'message': 'OTP verified successfully.'}, status=status.HTTP_200_OK)
         else:
-            messages.error(request, 'Invalid OTP or OTP expired')
-
-    return render(request, 'verify_otp.html')
+            return Response({'error': 'Invalid or expired OTP.'}, status=status.HTTP_400_BAD_REQUEST)
