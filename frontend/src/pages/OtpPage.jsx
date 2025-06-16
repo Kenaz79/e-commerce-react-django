@@ -1,23 +1,24 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { useLocation } from 'react-router-dom';
 import './auth.css';
 
-export default function OtpPage({ email }) {
+export default function OtpPage() {
+  const { state } = useLocation();
   const [otp, setOtp] = useState('');
   const [message, setMessage] = useState('');
   const [verified, setVerified] = useState(false);
 
-  const handleOtpSubmit = async (e) => {
+  const generatedOtp = state?.generatedOtp;
+
+  const handleOtpSubmit = (e) => {
     e.preventDefault();
-    try {
-      const res = await axios.post('http://localhost:8000/api/verify-otp/', {
-        email,
-        otp,
-      });
-      setMessage(res.data.message || 'Verified!');
+
+    if (otp === generatedOtp) {
+      setMessage('OTP verified successfully!');
       setVerified(true);
-    } catch (err) {
+    } else {
       setMessage('Invalid OTP');
+      setVerified(false);
     }
   };
 
