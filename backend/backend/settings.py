@@ -46,13 +46,14 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # Must be *above* CommonMiddleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
+
 CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'backend.urls'
@@ -139,9 +140,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'  # For Gmail, or your email provider's SMTP server
 EMAIL_PORT = 587  # For TLS
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'youremail@gmail.com'  # Your email address
-EMAIL_HOST_PASSWORD = 'your-app-password'  # Your app password (not regular password)
-DEFAULT_FROM_EMAIL = 'youremail@gmail.com'  # Default sender email
+EMAIL_HOST_USER = 'kenblessed08@gmail.com'  # Your email address
+EMAIL_HOST_PASSWORD = 'Venusflytrap#100#'  # Your app password (not regular password)
+DEFAULT_FROM_EMAIL = 'kenblessed08@gmail.com'  # Default sender email
 
 # OTP Configuration
 OTP_VALIDITY = 300  # 5 minutes in seconds
