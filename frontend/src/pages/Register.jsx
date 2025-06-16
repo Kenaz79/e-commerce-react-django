@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './auth.css';
 
@@ -13,48 +12,50 @@ export default function Register() {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [showPasswords, setShowPasswords] = useState(false);
-  const navigate = useNavigate(); // ✅ initialize navigation
+  const navigate = useNavigate();
 
   const handleChange = e => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async e => {
+  const handleSubmit = e => {
     e.preventDefault();
+
     if (formData.password !== formData.confirmPassword) {
       setMessage("Passwords do not match");
       setMessageType('error');
       return;
     }
-    try {
-      const res = await axios.post('http://localhost:8000/api/register/', {
-        username: formData.username,
-        email: formData.email,
-        password: formData.password,
+
+    // Simulate successful registration
+    setMessage("Registration successful! Check your email.");
+    setMessageType('success');
+
+    // Generate a random 6-digit OTP
+    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    console.log('Generated OTP (simulated email):', generatedOtp); // For testing
+
+    // Save email before clearing form
+    const emailToSend = formData.email;
+
+    // Reset form
+    setFormData({
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    });
+
+    // Navigate to OTP page with the generated OTP
+    setTimeout(() => {
+      navigate('/otp', {
+        state: {
+          email: emailToSend,
+          generatedOtp: generatedOtp,
+        }
       });
-
-      await axios.post('http://localhost:8000/api/send-otp/', {
-        email: formData.email,
-      });
-
-      setMessage(res.data.message || "Registration successful!");
-      setMessageType('success');
-
-      // Optional: clear form fields
-      setFormData({
-        username: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-      });
-
-      // ✅ Redirect to OTP page with email
-      navigate('/otp', { state: { email: formData.email } });
-
-    } catch (err) {
-      setMessage(err.response?.data?.error || 'Error occurred');
-      setMessageType('error');
-    }
+    }, 1000);
   };
 
   return (
