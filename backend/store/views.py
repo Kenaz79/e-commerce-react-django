@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.hashers import make_password
 from django.db import IntegrityError
+from .serializers import RegisterSerializer
 from rest_framework.permissions import AllowAny
 from rest_framework.parsers import JSONParser
 from django.shortcuts import render, redirect
@@ -68,33 +69,12 @@ class RegisterView(APIView):
     parser_classes = [JSONParser]
 
     def post(self, request):
-        username = request.data.get('username')
-        email = request.data.get('email')
-        password = request.data.get('password')
-
-        if not username or not email or not password:
-            return Response({'error': 'Username, email, and password are required.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            if User.objects.filter(username=username).exists():
-                return Response({'error': 'Username already exists.'}, status=status.HTTP_400_BAD_REQUEST)
-            if User.objects.filter(email=email).exists():
-                return Response({'error': 'Email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
-
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password
-            )
-            user.save()
-
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
             return Response({'message': 'User registered successfully.'}, status=status.HTTP_201_CREATED)
-
-        except Exception as e:
-            return Response({'error': 'Registration failed. ' + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class VerifyOTPView(APIView):
     permission_classes = [AllowAny]
     parser_classes = [JSONParser]
