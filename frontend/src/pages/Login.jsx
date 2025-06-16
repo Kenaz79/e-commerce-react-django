@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import './auth.css';
 import { useNavigate } from 'react-router-dom';
 
@@ -7,40 +6,32 @@ export default function Login() {
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [message, setMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate(); // for redirection
+  const navigate = useNavigate();
 
   const handleChange = e => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleLogin = async e => {
+  const handleLogin = e => {
     e.preventDefault();
-    try {
-      const res = await axios.post('http://localhost:8000/api/token/', formData);
 
-      localStorage.setItem('access', res.data.access);
-      localStorage.setItem('refresh', res.data.refresh);
-
-      setMessage('Login successful ✅');
-
-      // Optional: fetch user profile or role
-      // const userRes = await axios.get('http://localhost:8000/api/profile/', {
-      //   headers: { Authorization: `Bearer ${res.data.access}` },
-      // });
-      // const role = userRes.data.role;
-      // if (role === 'student') navigate('/student-dashboard');
-      // else if (role === 'lecturer') navigate('/lecturer-dashboard');
-
-      // For now, redirect to home or dashboard
-      navigate('/dashboard');
-    } catch (err) {
-      console.error(err);
-      if (err.response && err.response.status === 401) {
-        setMessage('❌ Invalid username or password.');
-      } else {
-        setMessage('❌ Server error. Please try again.');
-      }
+    // Simple frontend validation
+    if (!formData.username || !formData.password) {
+      setMessage('Please enter both username and password');
+      return;
     }
+
+    // Simulate a successful login after 1 second
+    setMessage('Login successful ✅');
+
+    // Optionally, you could store dummy tokens here
+    localStorage.setItem('access', 'dummy-access-token');
+    localStorage.setItem('refresh', 'dummy-refresh-token');
+
+    // Redirect to dashboard after a short delay to show the message
+    setTimeout(() => {
+      navigate('/dashboard');
+    }, 1000);
   };
 
   return (
