@@ -4,20 +4,53 @@
   justify-content: center;
   gap: 2rem;
   padding: 2rem;
+  background: #f5f0ff; /* very light lavender */
 }
 
 .product-card {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  padding: 1rem;
-  max-width: 200px;
+  background: #f9f7ff; /* soft pastel purple */
+  border: 2px solid #8a63d2; /* medium purple border */
+  border-radius: 16px;
+  padding: 1.5rem;
+  max-width: 220px;
   text-align: center;
-  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+  box-shadow: 0 6px 15px rgba(138, 99, 210, 0.25);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.product-card img {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
+.product-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 25px rgba(138, 99, 210, 0.4);
+}
+
+.product-card h3 {
+  color: #7b49d9; /* bright purple */
+  margin: 0.8rem 0 0.4rem;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-weight: 700;
+}
+
+.product-card p {
+  color: #555;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.product-card button {
+  background: #8a63d2; /* medium purple */
+  border: none;
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 8px rgba(138, 99, 210, 0.4);
+}
+
+.product-card button:hover {
+  background: #6d47b9; /* darker purple on hover */
+  box-shadow: 0 6px 15px rgba(109, 71, 185, 0.7);
 }

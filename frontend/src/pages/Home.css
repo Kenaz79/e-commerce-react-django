@@ -1,53 +1,111 @@
 .home-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position: relative;
   min-height: 100vh;
-  padding: 2rem;
-  background: linear-gradient(to right, #f9f9f9, #f0f0f0);
+  background: linear-gradient(135deg, #fef6ff, #ffe7f7);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.home-navbar {
+  display: flex;
+  align-items: center;
+  background: #9c27b0;
+  padding: 12px 20px;
+  color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.hamburger-icon {
+  font-size: 24px;
+  cursor: pointer;
+  margin-right: 15px;
+}
+
+.logo {
+  font-size: 1.7rem;
+  font-weight: bold;
+}
+
+.side-menu {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  width: 220px;
+  background-color: white;
+  box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  animation: slideIn 0.3s ease;
+  border-radius: 0 8px 8px 0;
+  overflow: hidden;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.menu-item {
+  padding: 14px 18px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.menu-item:hover {
+  background: #f7ecfc;
+  transform: translateX(2px);
+}
+
+.menu-icon {
+  font-size: 18px;
+  color: #6a0dad;
+}
+
+.menu-item.logout {
+  color: #f44336;
+  font-weight: bold;
 }
 
 .home-hero {
   text-align: center;
-  max-width: 600px;
-  padding: 2rem;
-  background: #fff;
+  padding: 100px 20px;
+  background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 30px auto;
+  max-width: 700px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 .home-hero h1 {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  color: #333;
+  font-size: 2.7rem;
+  color: #6a0dad;
+  margin-bottom: 10px;
 }
 
 .home-hero p {
-  font-size: 1.1rem;
-  color: #666;
-  margin-bottom: 2rem;
+  font-size: 1.2rem;
+  color: #555;
+  margin-bottom: 25px;
 }
 
 .home-hero a {
   display: inline-block;
-  padding: 0.8rem 1.5rem;
-  background-color: #007bff;
+  background-color: #9c27b0;
   color: white;
+  padding: 12px 24px;
   border-radius: 8px;
   text-decoration: none;
+  font-weight: bold;
   transition: background-color 0.3s ease;
 }
 
 .home-hero a:hover {
-  background-color: #0056b3;
-}
-
-@media screen and (max-width: 600px) {
-  .home-hero {
-    padding: 1rem;
-  }
-
-  .home-hero h1 {
-    font-size: 2rem;
-  }
+  background-color: #7b1fa2;
 }
