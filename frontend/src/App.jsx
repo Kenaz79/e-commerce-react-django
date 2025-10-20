@@ -33,6 +33,13 @@ function App() {
   //const [language, setLanguage] = useState('EN');
   //const [productReviews, setProductReviews] = useState({});
   const [zoomedImage, setZoomedImage] = useState(null);
+  const [productReviews, setProductReviews] = useState({});
+  const [addresses, setAddresses] = useState([]);
+  const [tickets, setTickets] = useState([]);
+  const [accountTab, setAccountTab] = useState('orders');
+  const [expandedOrder, setExpandedOrder] = useState(null);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [returnForm, setReturnForm] = useState({ orderNumber: null, reason: '' });
   
   const [checkoutData, setCheckoutData] = useState({
     fullName: '',
@@ -373,6 +380,45 @@ function App() {
       minimumFractionDigits: currency === 'UGX' ? 0 : 2,
       maximumFractionDigits: currency === 'UGX' ? 0 : 2
     });
+  };
+
+  const submitReview = (productId, rating, comment) => {
+    if (!user) {
+      showToast('Please login to leave a review', 'warning');
+      setShowAuthModal(true);
+      return;
+    }
+    const newReview = {
+      id: Date.now(),
+      userName: user.name,
+      rating,
+      comment,
+      date: new Date().toISOString()
+    };
+    setProductReviews(prev => ({
+      ...prev,
+      [productId]: [...(prev[productId] || []), newReview]
+    }));
+    showToast('Review submitted!', 'success');
+  };
+
+  const requestReturn = (orderNumber, reason) => {
+    setOrders(prev => prev.map(o =>
+      o.orderNumber === orderNumber
+        ? { ...o, returnRequest: { reason, status: 'Pending', date: new Date().toISOString() } }
+        : o
+    ));
+    setReturnForm({ orderNumber: null, reason: '' });
+    showToast('Return request submitted', 'success');
+  };
+
+  const formatDate = (iso) => new Date(iso).toLocaleString();
+
+  const getTrackingSteps = (order) => {
+    const steps = ['Processing', 'Shipped', 'Out for delivery', 'Delivered'];
+    const icons = [Package, Truck, Truck, Check];
+    const currentIndex = Math.max(0, steps.indexOf(order.status));
+    return steps.map((label, idx) => ({ label, icon: icons[idx], done: idx <= currentIndex }));
   };
 
   const calculateTotal = () => {
@@ -921,9 +967,33 @@ function App() {
         items: cart,
         total: totals.total,
         status: 'Processing',
-        tracking: 'TRK' + Date.now()
+        tracking: 'TRK' + Date.now(),
+        paymentMethod: checkoutData.paymentMethod,
+        shippingAddress: {
+          fullName: checkoutData.fullName,
+          email: checkoutData.email,
+          phone: checkoutData.phone,
+          address: checkoutData.address,
+          city: checkoutData.city,
+          postalCode: checkoutData.postalCode
+        }
       };
       setOrders([...orders, newOrder]);
+      if (checkoutData.saveAddress) {
+        const addr = {
+          id: 'ADDR' + Date.now(),
+          fullName: checkoutData.fullName,
+          email: checkoutData.email,
+          phone: checkoutData.phone,
+          address: checkoutData.address,
+          city: checkoutData.city,
+          postalCode: checkoutData.postalCode
+        };
+        setAddresses(prev => {
+          const exists = prev.some(a => a.address === addr.address && a.phone === addr.phone);
+          return exists ? prev : [...prev, addr];
+        });
+      }
       setCart([]);
       setCurrentView('success');
       showToast('Order placed successfully!', 'success');
@@ -955,7 +1025,42 @@ function App() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
               <form onSubmit={completeOrder} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
-                <h2 className="text-2xl font-bold mb-6">Delivery Information</h2>
+                {addresses.length > 0 && (
+                  <div className="mb-6">
+                    <h2 className="text-xl font-bold mb-3">Saved Addresses</h2>
+                    <div className="space-y-2">
+                      {addresses.map(addr => (
+                        <label key={addr.id} className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                          <input
+                            type="radio"
+                            name="savedAddress"
+                            checked={selectedAddressId === addr.id}
+                            onChange={() => {
+                              setSelectedAddressId(addr.id);
+                              setCheckoutData({
+                                ...checkoutData,
+                                fullName: addr.fullName,
+                                email: addr.email,
+                                phone: addr.phone,
+                                address: addr.address,
+                                city: addr.city,
+                                postalCode: addr.postalCode
+                              });
+                            }}
+                            className="mt-1 w-4 h-4"
+                          />
+                          <div className="text-sm">
+                            <div className="font-semibold">{addr.fullName} • {addr.phone}</div>
+                            <div className="text-gray-600">{addr.address}, {addr.city}</div>
+                            {addr.postalCode && <div className="text-gray-500">{addr.postalCode}</div>}
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <h2 className="text-2xl font-bold mb-4">Delivery Information</h2>
                 
                 <div className="space-y-4 mb-6">
                   <div>
@@ -1213,8 +1318,8 @@ function App() {
             </button>
             <button
               onClick={() => {
-                setCurrentView('home');
-                showToast('Check your email for order details', 'info');
+                setAccountTab('orders');
+                setCurrentView('account');
               }}
               className="flex-1 border-2 border-orange-500 text-orange-500 hover:bg-orange-50 py-3 rounded-lg font-bold transition"
             >
@@ -1224,6 +1329,448 @@ function App() {
         </div>
       </div>
     );
+  }
+
+  const ProductView = () => {
+    if (!selectedProduct) return null;
+    const [selectedColor, setSelectedColor] = useState(selectedProduct.colors?.[0] || null);
+    const [selectedSize, setSelectedSize] = useState(selectedProduct.sizes?.[0] || null);
+    const [rating, setRating] = useState(5);
+    const [comment, setComment] = useState('');
+    const reviewsForProduct = productReviews[selectedProduct.id] || [];
+
+    return (
+      <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
+        <Toast />
+        <header className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
+          <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <button onClick={() => setCurrentView('home')} className="flex items-center gap-2 hover:text-orange-600">
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-semibold">Back</span>
+            </button>
+            <h1 className="text-2xl font-bold text-cyan-600">Product Details</h1>
+            <div className="w-16" />
+          </div>
+        </header>
+
+        <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div>
+            <img
+              src={selectedProduct.image}
+              alt={selectedProduct.name}
+              className="w-full h-96 object-cover rounded-lg cursor-zoom-in"
+              onClick={() => setZoomedImage(selectedProduct.image)}
+            />
+            <div className="mt-4 grid grid-cols-3 gap-3">
+              {selectedProduct.images?.map((img, idx) => (
+                <img key={idx} src={img} alt={selectedProduct.name}
+                  className="w-full h-24 object-cover rounded cursor-pointer hover:opacity-90"
+                  onClick={() => setZoomedImage(img)} />
+              ))}
+            </div>
+          </div>
+
+          <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow p-6`}>
+            <h2 className="text-3xl font-bold mb-2">{selectedProduct.name}</h2>
+            <div className="flex items-center gap-2 mb-2">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className={`w-5 h-5 ${i < Math.floor(selectedProduct.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+              ))}
+              <span className="text-gray-600">({selectedProduct.reviews} reviews)</span>
+            </div>
+            <div className="mb-4">
+              <span className="text-3xl font-bold text-cyan-600">{formatPrice(selectedProduct.price)}</span>
+              {selectedProduct.oldPrice && (
+                <span className="ml-3 text-xl text-gray-500 line-through">{formatPrice(selectedProduct.oldPrice)}</span>
+              )}
+            </div>
+            <p className="text-gray-700 mb-4">{selectedProduct.description}</p>
+
+            {selectedProduct.colors?.length > 0 && (
+              <div className="mb-4">
+                <div className="font-semibold mb-2">Color</div>
+                <div className="flex gap-2 flex-wrap">
+                  {selectedProduct.colors.map((c) => (
+                    <button key={c} onClick={() => setSelectedColor(c)}
+                      className={`px-3 py-1 rounded border ${selectedColor === c ? 'bg-cyan-500 text-white border-cyan-500' : 'hover:bg-gray-50'}`}>{c}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedProduct.sizes?.length > 0 && (
+              <div className="mb-4">
+                <div className="font-semibold mb-2">Size</div>
+                <div className="flex gap-2 flex-wrap">
+                  {selectedProduct.sizes.map((s) => (
+                    <button key={s} onClick={() => setSelectedSize(s)}
+                      className={`px-3 py-1 rounded border ${selectedSize === s ? 'bg-cyan-500 text-white border-cyan-500' : 'hover:bg-gray-50'}`}>{s}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3 mb-6">
+              <button onClick={() => addToCart(selectedProduct, selectedColor, selectedSize)}
+                className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-3 rounded-lg font-bold">Add to Cart</button>
+              <button onClick={() => toggleWishlist(selectedProduct.id)}
+                className="px-4 py-3 border rounded-lg hover:bg-gray-50">{wishlist.includes(selectedProduct.id) ? 'Wishlisted' : 'Wishlist'}</button>
+            </div>
+
+            <div className="mt-6">
+              <h3 className="text-xl font-bold mb-3">Specifications</h3>
+              <ul className="list-disc pl-5 space-y-1 text-gray-700">
+                {selectedProduct.specs?.map((s, i) => <li key={i}>{s}</li>)}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 pb-12">
+          <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow p-6`}>
+            <h3 className="text-2xl font-bold mb-4">Reviews</h3>
+            {reviewsForProduct.length === 0 ? (
+              <p className="text-gray-600 mb-4">No reviews yet. Be the first to review!</p>
+            ) : (
+              <div className="space-y-4 mb-6">
+                {reviewsForProduct.map(r => (
+                  <div key={r.id} className="border rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className={`w-4 h-4 ${i < r.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+                      ))}
+                      <span className="text-sm text-gray-600">by {r.userName} • {formatDate(r.date)}</span>
+                    </div>
+                    <p className="text-sm text-gray-700">{r.comment}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="border-t pt-4">
+              <h4 className="font-semibold mb-2">Leave a Review</h4>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-sm">Your Rating:</span>
+                <div className="flex items-center gap-1">
+                  {[1,2,3,4,5].map(v => (
+                    <button key={v} onClick={() => setRating(v)}>
+                      <Star className={`w-5 h-5 ${v <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Share your thoughts..."
+                  className="flex-1 px-3 py-2 border rounded-lg"
+                />
+                <button
+                  onClick={() => {
+                    if (!comment.trim()) { showToast('Please enter a comment', 'warning'); return; }
+                    submitReview(selectedProduct.id, rating, comment.trim());
+                    setComment('');
+                  }}
+                  className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 font-semibold"
+                >
+                  Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const AccountView = () => {
+    if (!user) {
+      return (
+        <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'} flex items-center justify-center p-4`}>
+          <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-8 max-w-md w-full text-center`}>
+            <h2 className="text-2xl font-bold mb-2">Sign in to view your account</h2>
+            <p className="text-gray-600 mb-4">Access orders, addresses, profile and support</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowAuthModal(true)} className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-3 rounded-lg font-bold">Login</button>
+              <button onClick={() => { setAuthMode('register'); setShowAuthModal(true); }} className="flex-1 border-2 border-cyan-500 text-cyan-500 hover:bg-cyan-50 py-3 rounded-lg font-bold">Register</button>
+            </div>
+            <button onClick={() => setCurrentView('home')} className="mt-4 text-sm text-gray-500 hover:text-cyan-600">Continue shopping</button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
+        <Toast />
+        <header className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
+          <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <button onClick={() => setCurrentView('home')} className="flex items-center gap-2 hover:text-orange-600">
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-semibold">Back to Shopping</span>
+            </button>
+            <h1 className="text-2xl font-bold text-cyan-600">Account Dashboard</h1>
+            <div className="w-16" />
+          </div>
+        </header>
+
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex gap-2 overflow-x-auto mb-6">
+            {['orders','profile','addresses','support'].map(tab => (
+              <button key={tab} onClick={() => setAccountTab(tab)}
+                className={`px-4 py-2 rounded-lg font-semibold capitalize ${accountTab === tab ? 'bg-cyan-500 text-white' : (darkMode ? 'bg-gray-800' : 'bg-white') + ' border hover:bg-gray-50'}`}
+              >{tab}</button>
+            ))}
+          </div>
+
+          {accountTab === 'orders' && (
+            <div className="space-y-4">
+              {orders.length === 0 ? (
+                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow text-center text-gray-600`}>
+                  No orders yet.
+                </div>
+              ) : (
+                orders.slice().reverse().map(order => (
+                  <div key={order.orderNumber} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow`}>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="font-bold">Order #{order.orderNumber}</div>
+                        <div className="text-sm text-gray-600">{formatDate(order.date)}</div>
+                      </div>
+                      <div className="text-sm">
+                        <span className="mr-4">Total: <span className="font-bold text-orange-600">{formatPrice(order.total)}</span></span>
+                        <span>Status: <span className="font-semibold">{order.status}</span></span>
+                      </div>
+                      <button onClick={() => setExpandedOrder(expandedOrder === order.orderNumber ? null : order.orderNumber)} className="px-3 py-2 border rounded-lg hover:bg-gray-50 font-semibold">
+                        {expandedOrder === order.orderNumber ? 'Hide Details' : 'View Details'}
+                      </button>
+                    </div>
+
+                    {expandedOrder === order.orderNumber && (
+                      <div className="mt-4 border-t pt-4 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <h4 className="font-bold mb-2">Items</h4>
+                            <div className="space-y-2">
+                              {order.items.map((it, i) => (
+                                <div key={i} className="flex gap-3 items-center">
+                                  <img src={it.image} alt={it.name} className="w-14 h-14 object-cover rounded" />
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-sm">{it.name}</div>
+                                    <div className="text-xs text-gray-600">Qty: {it.quantity} • {formatPrice(it.price * it.quantity)}</div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <h4 className="font-bold mb-2">Shipping</h4>
+                            <div className="text-sm text-gray-700">
+                              <div>{order.shippingAddress?.fullName} • {order.shippingAddress?.phone}</div>
+                              <div>{order.shippingAddress?.address}, {order.shippingAddress?.city}</div>
+                              {order.shippingAddress?.postalCode && <div>{order.shippingAddress?.postalCode}</div>}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h4 className="font-bold mb-2">Tracking</h4>
+                          <div className="flex flex-col md:flex-row md:items-center gap-4">
+                            {getTrackingSteps(order).map((step, idx) => {
+                              const Icon = step.icon;
+                              return (
+                                <div key={idx} className="flex items-center gap-2">
+                                  <Icon className={`w-5 h-5 ${step.done ? 'text-green-600' : 'text-gray-400'}`} />
+                                  <span className={`${step.done ? 'text-green-700 font-semibold' : 'text-gray-600'}`}>{step.label}</span>
+                                  {idx < 3 && <span className="hidden md:inline text-gray-400 mx-2">›</span>}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">Tracking ID: {order.tracking}</div>
+                        </div>
+
+                        <div>
+                          <h4 className="font-bold mb-2">Returns</h4>
+                          {order.returnRequest ? (
+                            <div className="text-sm text-gray-700">
+                              Request: <span className="font-semibold">{order.returnRequest.reason}</span> • Status: <span className="font-semibold">{order.returnRequest.status}</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              {returnForm.orderNumber === order.orderNumber ? (
+                                <>
+                                  <input
+                                    type="text"
+                                    value={returnForm.reason}
+                                    onChange={(e) => setReturnForm({ orderNumber: order.orderNumber, reason: e.target.value })}
+                                    placeholder="Reason for return"
+                                    className="flex-1 px-3 py-2 border rounded-lg"
+                                  />
+                                  <button onClick={() => returnForm.reason.trim() && requestReturn(order.orderNumber, returnForm.reason.trim())}
+                                    className="px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-semibold">Submit</button>
+                                  <button onClick={() => setReturnForm({ orderNumber: null, reason: '' })}
+                                    className="px-3 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                                </>
+                              ) : (
+                                <button onClick={() => setReturnForm({ orderNumber: order.orderNumber, reason: '' })}
+                                  className="px-3 py-2 border rounded-lg hover:bg-gray-50 font-semibold">Request Return</button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {accountTab === 'profile' && (
+            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow max-w-xl`}>
+              <h3 className="text-xl font-bold mb-4">Profile</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Full Name</label>
+                  <input type="text" value={user.name}
+                    onChange={(e) => setUser({ ...user, name: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Email</label>
+                  <input type="email" value={user.email}
+                    onChange={(e) => setUser({ ...user, email: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Phone</label>
+                  <input type="tel" value={user.phone || ''}
+                    onChange={(e) => setUser({ ...user, phone: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg" />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => showToast('Profile updated', 'success')} className="px-4 py-2 bg-cyan-500 text-white rounded-lg font-semibold hover:bg-cyan-600">Save</button>
+                  <button onClick={() => { setUser(null); showToast('Logged out', 'info'); }} className="px-4 py-2 border rounded-lg font-semibold hover:bg-gray-50">Logout</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {accountTab === 'addresses' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow`}>
+                <h3 className="text-xl font-bold mb-3">Saved Addresses</h3>
+                {addresses.length === 0 ? (
+                  <p className="text-gray-600">No saved addresses.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {addresses.map(addr => (
+                      <div key={addr.id} className="border rounded-lg p-3 flex items-start gap-3">
+                        <MapPin className="w-5 h-5 text-cyan-600 mt-1" />
+                        <div className="flex-1 text-sm">
+                          <div className="font-semibold">{addr.fullName} • {addr.phone}</div>
+                          <div className="text-gray-700">{addr.address}, {addr.city}</div>
+                          {addr.postalCode && <div className="text-gray-500">{addr.postalCode}</div>}
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => {
+                            setCheckoutData({
+                              ...checkoutData,
+                              fullName: addr.fullName,
+                              email: addr.email,
+                              phone: addr.phone,
+                              address: addr.address,
+                              city: addr.city,
+                              postalCode: addr.postalCode
+                            });
+                            setCurrentView('checkout');
+                            showToast('Address applied to checkout', 'success');
+                          }} className="px-3 py-1 bg-cyan-500 text-white rounded-lg text-sm">Use</button>
+                          <button onClick={() => setAddresses(prev => prev.filter(a => a.id !== addr.id))} className="px-3 py-1 border rounded-lg text-sm hover:bg-gray-50">Delete</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow`}>
+                <h3 className="text-xl font-bold mb-3">Add New Address</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input type="text" placeholder="Full Name" className="px-3 py-2 border rounded-lg" onChange={(e) => setCheckoutData({ ...checkoutData, fullName: e.target.value })} />
+                  <input type="email" placeholder="Email" className="px-3 py-2 border rounded-lg" onChange={(e) => setCheckoutData({ ...checkoutData, email: e.target.value })} />
+                  <input type="tel" placeholder="Phone" className="px-3 py-2 border rounded-lg" onChange={(e) => setCheckoutData({ ...checkoutData, phone: e.target.value })} />
+                  <input type="text" placeholder="City" className="px-3 py-2 border rounded-lg" onChange={(e) => setCheckoutData({ ...checkoutData, city: e.target.value })} />
+                  <input type="text" placeholder="Postal Code" className="px-3 py-2 border rounded-lg" onChange={(e) => setCheckoutData({ ...checkoutData, postalCode: e.target.value })} />
+                  <textarea placeholder="Address" rows="3" className="md:col-span-2 px-3 py-2 border rounded-lg" onChange={(e) => setCheckoutData({ ...checkoutData, address: e.target.value })} />
+                </div>
+                <button onClick={() => {
+                  if (!checkoutData.fullName || !checkoutData.phone || !checkoutData.address || !checkoutData.city) {
+                    showToast('Please fill required fields', 'warning'); return;
+                  }
+                  const addr = { id: 'ADDR' + Date.now(), fullName: checkoutData.fullName, email: checkoutData.email, phone: checkoutData.phone, address: checkoutData.address, city: checkoutData.city, postalCode: checkoutData.postalCode };
+                  setAddresses(prev => [...prev, addr]);
+                  showToast('Address saved', 'success');
+                }} className="mt-4 px-4 py-2 bg-cyan-500 text-white rounded-lg font-semibold hover:bg-cyan-600">Save Address</button>
+              </div>
+            </div>
+          )}
+
+          {accountTab === 'support' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow`}>
+                <h3 className="text-xl font-bold mb-3">My Tickets</h3>
+                {tickets.length === 0 ? (
+                  <p className="text-gray-600">No support tickets.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {tickets.slice().reverse().map(t => (
+                      <div key={t.id} className="border rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="font-semibold">{t.subject}</div>
+                          <span className={`text-xs px-2 py-1 rounded ${t.status === 'Open' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{t.status}</span>
+                        </div>
+                        <div className="text-sm text-gray-600">{formatDate(t.date)}</div>
+                        <p className="text-sm mt-2 text-gray-700">{t.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow`}>
+                <h3 className="text-xl font-bold mb-3">New Ticket</h3>
+                <div className="space-y-3">
+                  <input id="ticketSubject" type="text" placeholder="Subject" className="w-full px-3 py-2 border rounded-lg" />
+                  <textarea id="ticketMessage" placeholder="Describe your issue" rows="4" className="w-full px-3 py-2 border rounded-lg" />
+                  <button onClick={() => {
+                    const subject = document.getElementById('ticketSubject').value.trim();
+                    const message = document.getElementById('ticketMessage').value.trim();
+                    if (!subject || !message) { showToast('Please fill subject and message', 'warning'); return; }
+                    const t = { id: 'TIC' + Date.now(), subject, message, status: 'Open', date: new Date().toISOString() };
+                    setTickets(prev => [...prev, t]);
+                    showToast('Ticket submitted', 'success');
+                    document.getElementById('ticketSubject').value = '';
+                    document.getElementById('ticketMessage').value = '';
+                  }} className="px-4 py-2 bg-cyan-500 text-white rounded-lg font-semibold hover:bg-cyan-600">Submit</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  if (currentView === 'product') {
+    return <ProductView />;
+  }
+
+  if (currentView === 'account') {
+    return <AccountView />;
   }
 
   return (
@@ -1322,8 +1869,9 @@ function App() {
 
               {user ? (
                 <button
-                  onClick={() => showToast(`Welcome back, ${user.name}!`, 'success')}
+                  onClick={() => { setAccountTab('orders'); setCurrentView('account'); }}
                   className="p-2 hover:bg-gray-100 rounded-lg"
+                  aria-label="Account"
                 >
                   <User className="w-6 h-6" />
                 </button>
@@ -1331,6 +1879,7 @@ function App() {
                 <button
                   onClick={() => setShowAuthModal(true)}
                   className="p-2 hover:bg-gray-100 rounded-lg"
+                  aria-label="Login"
                 >
                   <User className="w-6 h-6" />
                 </button>
