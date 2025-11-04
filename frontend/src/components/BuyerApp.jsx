@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Search, Menu, Heart, User, Star, TrendingUp, Smartphone, Laptop, Home, Shirt, X, ArrowLeft, Plus, Minus, Package, CreditCard, MapPin, Phone, Mail, Filter, SortAsc, Eye, Clock, Gift, Percent, MessageCircle, Bell, Sun, Moon, ChevronRight, Share2, Truck, Download, Zap, Users, Tag, Check } from 'lucide-react';
+import { ShoppingCart, Search, Menu, Heart, User, Star, TrendingUp, Smartphone, Laptop, Home, Shirt, X, ArrowLeft, Plus, Minus, Package, CreditCard, MapPin, Phone, Mail, Filter, SortAsc, Eye, Clock, Gift, Percent, MessageCircle, Bell, Sun, Moon, ChevronRight, Share2, Truck, Download, Zap, Users, Tag, Check, Shield } from 'lucide-react';
+import AdminPanel from './AdminPanel';
+import { apiService } from '../services/api';
 
 function App() {
   const [cart, setCart] = useState([]);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCart, setShowCart] = useState(false);
@@ -28,10 +31,7 @@ function App() {
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [newsletter, setNewsletter] = useState('');
   const [showNewsletter, setShowNewsletter] = useState(false);
-  //const [orderTracking, setOrderTracking] = useState(null);
   const [currency, setCurrency] = useState('UGX');
-  //const [language, setLanguage] = useState('EN');
-  //const [productReviews, setProductReviews] = useState({});
   const [zoomedImage, setZoomedImage] = useState(null);
   const [productReviews, setProductReviews] = useState({});
   const [addresses, setAddresses] = useState([]);
@@ -40,6 +40,9 @@ function App() {
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [returnForm, setReturnForm] = useState({ orderNumber: null, reason: '' });
+  const initialProducts = [
+  
+];
   
   const [checkoutData, setCheckoutData] = useState({
     fullName: '',
@@ -67,7 +70,7 @@ function App() {
     { id: 'home', name: 'Home & Garden', icon: Home },
   ];
 
-  const products = [
+  const [products, setProducts] = useState([
     {
       id: 1,
       name: 'Samsung Galaxy S24 Ultra',
@@ -279,7 +282,68 @@ function App() {
       flashSale: false,
       bulkDiscount: null
     },
-  ];
+  ]);
+
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        // Use apiService for all API calls
+        const [productsData, ordersData] = await Promise.all([
+          apiService.getProducts().catch(() => products),
+          apiService.getOrders().catch(() => []),
+        ]);
+
+        setProducts(productsData);
+        setOrders(ordersData);
+
+        // Check authentication status
+        const token = localStorage.getItem('token');
+        const userData = localStorage.getItem('user');
+        if (showAdminPanel) {
+  return (
+    <AdminPanel
+      onBackToStore={() => setShowAdminPanel(false)}
+      products={products}
+      orders={orders}
+      darkMode={darkMode}
+      setDarkMode={setDarkMode}
+    />
+  );
+}
+        if (token && userData) {
+          setUser(JSON.parse(userData));
+          apiService.setToken(token);
+        }
+
+      } catch (error) {
+        console.error('Failed to load initial data:', error);
+        // Fallback to local products
+        setProducts(initialProducts);
+      }
+    };
+
+    loadInitialData();
+  }, []);
+
+  // Sync cart to backend whenever it changes (fire-and-forget)
+  useEffect(() => {
+    const sync = async () => {
+      if (!cart || cart.length === 0) return;
+      try {
+        await fetch('/api/cart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: cart })
+        });
+      } catch (err) {
+        // non-fatal; keep local cart
+        console.warn('Cart sync failed', err);
+      }
+    };
+
+    // avoid syncing empty initial state on mount
+    if (cart) sync();
+  }, [cart]);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });

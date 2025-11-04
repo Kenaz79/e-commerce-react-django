@@ -5,19 +5,21 @@ import {
   Trash2, Star, ArrowLeft, MessageSquare, Sun, Moon,
   X, Filter, Plus, Edit, Download, Upload, PieChart,
   Activity, Calendar, TrendingUp, Eye, ShoppingCart,
-  BarChart, Tag, User, MapPin, Clock, ArrowRight,
+  Tag, User, MapPin, Clock, ArrowRight,
   ChevronRight, Search, TrendingDown, Heart, Users as UsersIcon,
   CreditCard, Truck, CheckCircle as CheckCircleIcon,
   Image, FileText, Layers, Grid, Navigation, Car,
-  Home, Phone, Mail, Map, PackageCheck, Clock as ClockIcon
+  Home, Phone, Mail, Map, PackageCheck, Clock as ClockIcon,
+  RefreshCw
 } from 'lucide-react';
+import { apiService } from '../services/api';
 
 const AdminPanel = ({ onBackToStore, products: initialProducts, orders: initialOrders, darkMode, setDarkMode }) => {
   const [adminTab, setAdminTab] = useState('dashboard');
   const [deliverers, setDeliverers] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState(initialProducts || []);
-  const [orders, _setOrders] = useState(initialOrders || []);
+  const [orders, setOrders] = useState(initialOrders || []);
   const [analytics, setAnalytics] = useState({
     totalRevenue: 0,
     totalOrders: 0,
@@ -286,7 +288,7 @@ const AdminPanel = ({ onBackToStore, products: initialProducts, orders: initialO
     showToast('Product added successfully', 'success');
   };
 
-  const _updateDelivererStatus = (delivererId, status) => {
+  const updateDelivererStatus = (delivererId, status) => {
     setDeliverers(deliverers.map(deliverer => 
       deliverer.id === delivererId ? { ...deliverer, status, online: status === 'active' } : deliverer
     ));
@@ -368,11 +370,11 @@ const AdminPanel = ({ onBackToStore, products: initialProducts, orders: initialO
                 <p className="text-sm font-medium text-gray-600">Active Deliverers</p>
                 <p className="text-2xl font-bold text-gray-900">{deliverers.filter(d => d.online).length}</p>
               </div>
-              <div className="p-3 bg-orange-100 rounded-full">
-                <Truck className="w-6 h-6 text-orange-600" />
+              <div className="p-3 bg-cyan-100 rounded-full">
+                <Truck className="w-6 h-6 text-cyan-600" />
               </div>
             </div>
-            <p className="text-sm text-orange-600 mt-2">{deliverers.length} total deliverers</p>
+            <p className="text-sm text-cyan-600 mt-2">{deliverers.length} total deliverers</p>
           </div>
         </div>
 
