@@ -600,7 +600,7 @@ function App() {
     if (!quickViewProduct) return null;
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setQuickViewProduct(null)}>
+      <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4" onClick={() => setQuickViewProduct(null)}>
         <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto`} onClick={(e) => e.stopPropagation()}>
           <div className="p-6">
             <div className="flex justify-between items-start mb-4">
@@ -657,7 +657,7 @@ function App() {
     if (compareProducts.length === 0) return null;
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4">
         <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto`}>
           <div className="p-6">
             <div className="flex justify-between items-center mb-6">
@@ -716,7 +716,7 @@ function App() {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4">
         <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg max-w-md w-full p-6`}>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">{authMode === 'login' ? 'Login' : 'Create Account'}</h2>
@@ -801,7 +801,7 @@ function App() {
     if (!showNewsletter) return null;
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4">
         <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg max-w-md w-full p-6`}>
           <button onClick={() => setShowNewsletter(false)} className="float-right">
             <X className="w-5 h-5" />
@@ -835,7 +835,7 @@ function App() {
     if (!showFilters) return null;
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex" onClick={() => setShowFilters(false)}>
+      <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4" onClick={() => setShowFilters(false)}>
         <div
           className={`${darkMode ? 'bg-gray-800' : 'bg-white'} w-80 h-full overflow-y-auto p-6`}
           onClick={(e) => e.stopPropagation()}
@@ -926,7 +926,7 @@ function App() {
     if (!showCart) return null;
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end" onClick={() => setShowCart(false)}>
+      <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4" onClick={() => setShowCart(false)}>
         <div
           className={`${darkMode ? 'bg-gray-800' : 'bg-white'} w-full max-w-md h-full overflow-y-auto`}
           onClick={(e) => e.stopPropagation()}
@@ -1849,7 +1849,7 @@ function App() {
       <CartSidebar />
       
       {zoomedImage && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4" onClick={() => setZoomedImage(null)}>
+  <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4" onClick={() => setZoomedImage(null)}>
           <img src={zoomedImage} alt="Zoomed" className="max-w-full max-h-full object-contain" />
         </div>
       )}
@@ -2235,7 +2235,7 @@ function App() {
             <div>
               <h4 className="font-bold text-lg mb-4">Newsletter</h4>
               <p className="text-gray-400 mb-4">Subscribe for exclusive deals!</p>
-              <div className="flex gap-2">
+              <div className="flex flex-col space-y-3">
                 <input
                   type="email"
                   placeholder="Your email"
