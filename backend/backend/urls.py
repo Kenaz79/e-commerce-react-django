@@ -29,7 +29,6 @@ from rest_framework_simplejwt.views import (
 from backend import settings
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
 
     #path('api/products/', ProductListView.as_view(), name='product-list'),
     path('api/', include('store.urls')),
@@ -37,5 +36,10 @@ urlpatterns = [
     path('api/login/', LoginView.as_view(), name='login'),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/', include('api.urls')),
+    path('admin/', admin.site.urls),
+     #path('auth/', include('djoser.urls')),
+   #path('auth/', include('djoser.urls.authtoken')),
+
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
