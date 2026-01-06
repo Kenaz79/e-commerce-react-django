@@ -14,13 +14,12 @@ import {
 } from 'lucide-react';
 import { apiService } from '../services/api';
 
-const AdminPanel = ({ onBackToStore, products: initialProducts, orders: initialOrders }) => {
+const AdminPanel = ({ onBackToStore, darkMode, setDarkMode }) => {
   const [adminTab, setAdminTab] = useState('dashboard');
   const [deliverers, setDeliverers] = useState([]);
-  const [darkMode, setDarkMode] = useState(false);
   const [customers, setCustomers] = useState([]);
-  const [products, setProducts] = useState(initialProducts || []);
-  const [orders, setOrders] = useState(initialOrders || []);
+  const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [analytics, setAnalytics] = useState({
     totalRevenue: 0,
     totalOrders: 0,
@@ -64,157 +63,47 @@ const AdminPanel = ({ onBackToStore, products: initialProducts, orders: initialO
     image: ''
   });
 
+  const [loading, setLoading] = useState({
+    products: false,
+    orders: false,
+    deliverers: false,
+    customers: false,
+    analytics: false
+  });
+
+  const [toast, setToast] = useState(null);
+
   useEffect(() => {
-    const sampleDeliverers = [
-      {
-        id: 1,
-        name: 'James Mugisha',
-        email: 'james@deliveries.ug',
-        phone: '+256-700-111-222',
-        status: 'active',
-        joinDate: '2024-01-15',
-        totalDeliveries: 156,
-        vehicleType: 'Motorcycle',
-        licensePlate: 'UBA 123A',
-        area: 'Kampala Central',
-        rating: 4.8,
-        currentLocation: 'Nakasero',
-        online: true
-      },
-      {
-        id: 2,
-        name: 'Sarah Nalwoga',
-        email: 'sarah@deliveries.ug',
-        phone: '+256-700-333-444',
-        status: 'active',
-        joinDate: '2024-02-20',
-        totalDeliveries: 89,
-        vehicleType: 'Car',
-        licensePlate: 'UBK 456B',
-        area: 'Kira Road',
-        rating: 4.6,
-        currentLocation: 'Bukoto',
-        online: true
-      },
-      {
-        id: 3,
-        name: 'David Ochieng',
-        email: 'david@deliveries.ug',
-        phone: '+256-700-555-666',
-        status: 'offline',
-        joinDate: '2024-03-10',
-        totalDeliveries: 45,
-        vehicleType: 'Motorcycle',
-        licensePlate: 'UAE 789C',
-        area: 'Entebbe Road',
-        rating: 4.2,
-        currentLocation: 'Kajjansi',
-        online: false
-      }
-    ];
-
-    const sampleCustomers = [
-      {
-        id: 1,
-        name: 'John Kamya',
-        email: 'john@example.com',
-        phone: '+256-701-123-456',
-        joinDate: '2024-01-10',
-        totalOrders: 8,
-        totalSpent: 4500000,
-        lastOrder: '2024-06-15',
-        address: 'Plot 123, Kololo, Kampala',
-        favoriteCategory: 'electronics'
-      },
-      {
-        id: 2,
-        name: 'Sarah Nakato',
-        email: 'sarah@example.com',
-        phone: '+256-702-234-567',
-        joinDate: '2024-02-15',
-        totalOrders: 6,
-        totalSpent: 3800000,
-        lastOrder: '2024-06-12',
-        address: 'Block 45, Ntinda, Kampala',
-        favoriteCategory: 'fashion'
-      },
-      {
-        id: 3,
-        name: 'Mike Ssebaggala',
-        email: 'mike@example.com',
-        phone: '+256-703-345-678',
-        joinDate: '2024-03-20',
-        totalOrders: 5,
-        totalSpent: 3200000,
-        lastOrder: '2024-06-10',
-        address: 'House 67, Buziga, Kampala',
-        favoriteCategory: 'phones'
-      }
-    ];
-
-    const categories = ['phones', 'electronics', 'fashion', 'home'];
-    const samplePurchaseAnalytics = {
-      byCategory: categories.map(category => ({
-        category,
-        count: Math.floor(Math.random() * 50) + 20,
-        revenue: Math.floor(Math.random() * 20000000) + 5000000
-      })),
-      byPriceRange: [
-        { range: 'Under 100K', count: 45, percentage: 32 },
-        { range: '100K - 500K', count: 38, percentage: 27 },
-        { range: '500K - 1M', count: 28, percentage: 20 },
-        { range: '1M - 3M', count: 18, percentage: 13 },
-        { range: 'Over 3M', count: 11, percentage: 8 }
-      ],
-      bySize: [
-        { size: 'S', count: 25 },
-        { size: 'M', count: 45 },
-        { size: 'L', count: 32 },
-        { size: 'XL', count: 18 },
-        { size: 'Standard', count: 120 }
-      ],
-      topCustomers: sampleCustomers,
-      salesTrend: [
-        { day: 'Mon', sales: 12, revenue: 4500000 },
-        { day: 'Tue', sales: 18, revenue: 6800000 },
-        { day: 'Wed', sales: 15, revenue: 5200000 },
-        { day: 'Thu', sales: 22, revenue: 8500000 },
-        { day: 'Fri', sales: 25, revenue: 9200000 },
-        { day: 'Sat', sales: 30, revenue: 11500000 },
-        { day: 'Sun', sales: 20, revenue: 7800000 }
-      ],
-      deliveryPerformance: [
-        { deliverer: 'James Mugisha', completed: 156, onTime: 142, rating: 4.8 },
-        { deliverer: 'Sarah Nalwoga', completed: 89, onTime: 82, rating: 4.6 },
-        { deliverer: 'David Ochieng', completed: 45, onTime: 38, rating: 4.2 }
-      ]
-    };
-
-    const sampleAnalytics = {
-      totalRevenue: 85000000,
-      totalOrders: orders.length || 342,
-      totalProducts: products.length,
-      totalCustomers: sampleCustomers.length,
-      monthlyRevenue: [
-        { month: 'Jan', revenue: 12000000 },
-        { month: 'Feb', revenue: 18000000 },
-        { month: 'Mar', revenue: 22000000 },
-        { month: 'Apr', revenue: 19000000 },
-        { month: 'May', revenue: 25000000 },
-        { month: 'Jun', revenue: 28000000 }
-      ],
-      topProducts: products.slice(0, 5).map(p => ({
-        ...p,
-        sales: Math.floor(Math.random() * 100) + 20,
-        revenue: (Math.floor(Math.random() * 100) + 20) * p.price
-      }))
-    };
-
-    setDeliverers(sampleDeliverers);
-    setCustomers(sampleCustomers);
-    setAnalytics(sampleAnalytics);
-    setPurchaseAnalytics(samplePurchaseAnalytics);
+    loadDashboardData();
   }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(prev => ({ ...prev, products: true, orders: true, deliverers: true, customers: true, analytics: true }));
+      
+      const [productsData, ordersData, deliverersData, customersData, analyticsData, purchaseAnalyticsData] = await Promise.all([
+        apiService.getProducts(),
+        apiService.getOrders(),
+        apiService.getDeliverers(),
+        apiService.getCustomers(),
+        apiService.getAnalytics(),
+        apiService.getPurchaseAnalytics()
+      ]);
+
+      setProducts(productsData);
+      setOrders(ordersData);
+      setDeliverers(deliverersData);
+      setCustomers(customersData);
+      setAnalytics(analyticsData);
+      setPurchaseAnalytics(purchaseAnalyticsData);
+
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+      showToast('Failed to load data. Please try again.', 'error');
+    } finally {
+      setLoading(prev => ({ ...prev, products: false, orders: false, deliverers: false, customers: false, analytics: false }));
+    }
+  };
 
   const formatPrice = (price) => {
     return 'UGX ' + price.toLocaleString();
@@ -223,89 +112,180 @@ const AdminPanel = ({ onBackToStore, products: initialProducts, orders: initialO
   const formatDate = (iso) => new Date(iso).toLocaleDateString();
 
   const showToast = (message, type = 'success') => {
-    console.log(`${type}: ${message}`);
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
   };
 
-  const handleAddDeliverer = (e) => {
+  const handleAddDeliverer = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const deliverer = {
-      id: deliverers.length + 1,
-      ...newDeliverer,
-      status: 'active',
-      joinDate: new Date().toISOString().split('T')[0],
-      totalDeliveries: 0,
-      rating: 0,
-      currentLocation: 'Not assigned',
-      online: false
-    };
-    setDeliverers([...deliverers, deliverer]);
-    setShowAddDeliverer(false);
-    setNewDeliverer({
-      name: '',
-      email: '',
-      phone: '',
-      vehicleType: '',
-      licensePlate: '',
-      area: ''
-    });
-    showToast('Deliverer added successfully', 'success');
+    
+    try {
+      const response = await apiService.createDeliverer(newDeliverer);
+      if (response.success) {
+        setDeliverers([...deliverers, response.data]);
+        setShowAddDeliverer(false);
+        setNewDeliverer({
+          name: '',
+          email: '',
+          phone: '',
+          vehicleType: '',
+          licensePlate: '',
+          area: ''
+        });
+        showToast('Deliverer added successfully', 'success');
+      } else {
+        showToast(response.message || 'Failed to add deliverer', 'error');
+      }
+    } catch (error) {
+      console.error('Error adding deliverer:', error);
+      showToast('Failed to add deliverer', 'error');
+    }
   };
 
-  const handleAddProduct = (e) => {
+  const handleAddProduct = async (e) => {
     e.preventDefault();
-    const product = {
-      id: products.length + 1,
-      ...newProduct,
-      price: parseInt(newProduct.price),
-      stock: parseInt(newProduct.stock),
-      rating: 4.0,
-      reviews: 0,
-      inStock: true,
-      oldPrice: null,
-      discount: 0,
-      views: 0,
-      specs: [],
-      colors: [],
-      sizes: ['Standard'],
-      images: [newProduct.image],
-      flashSale: false,
-      bulkDiscount: null
+    
+    try {
+      const productData = {
+        ...newProduct,
+        price: parseInt(newProduct.price),
+        stock: parseInt(newProduct.stock),
+        rating: 4.0,
+        reviews: 0,
+        inStock: true,
+        oldPrice: null,
+        discount: 0,
+        views: 0,
+        specs: [],
+        colors: [],
+        sizes: ['Standard'],
+        images: [newProduct.image],
+        flashSale: false,
+        bulkDiscount: null
+      };
+
+      const response = await apiService.createProduct(productData);
+      if (response.success) {
+        setProducts([...products, response.data]);
+        setShowAddProduct(false);
+        setNewProduct({
+          name: '',
+          price: '',
+          category: '',
+          brand: '',
+          description: '',
+          stock: '',
+          image: ''
+        });
+        showToast('Product added successfully', 'success');
+      } else {
+        showToast(response.message || 'Failed to add product', 'error');
+      }
+    } catch (error) {
+      console.error('Error adding product:', error);
+      showToast('Failed to add product', 'error');
+    }
+  };
+
+  const updateDelivererStatus = async (delivererId, status) => {
+    try {
+      const response = await apiService.updateDelivererStatus(delivererId, status);
+      if (response.success) {
+        setDeliverers(deliverers.map(deliverer => 
+          deliverer.id === delivererId ? { ...deliverer, status, online: status === 'active' } : deliverer
+        ));
+        showToast(`Deliverer ${status}`, 'success');
+      }
+    } catch (error) {
+      console.error('Error updating deliverer status:', error);
+      showToast('Failed to update deliverer status', 'error');
+    }
+  };
+
+  const deleteDeliverer = async (delivererId) => {
+    try {
+      const response = await apiService.deleteDeliverer(delivererId);
+      if (response.success) {
+        setDeliverers(deliverers.filter(deliverer => deliverer.id !== delivererId));
+        showToast('Deliverer removed', 'info');
+      }
+    } catch (error) {
+      console.error('Error deleting deliverer:', error);
+      showToast('Failed to remove deliverer', 'error');
+    }
+  };
+
+  const toggleDelivererOnline = async (delivererId) => {
+    try {
+      const deliverer = deliverers.find(d => d.id === delivererId);
+      const newStatus = deliverer.online ? 'offline' : 'active';
+      await updateDelivererStatus(delivererId, newStatus);
+    } catch (error) {
+      console.error('Error toggling deliverer online status:', error);
+    }
+  };
+
+  const deleteProduct = async (productId) => {
+    try {
+      const response = await apiService.deleteProduct(productId);
+      if (response.success) {
+        setProducts(products.filter(product => product.id !== productId));
+        showToast('Product deleted', 'info');
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      showToast('Failed to delete product', 'error');
+    }
+  };
+
+  const toggleProductStatus = async (productId) => {
+    try {
+      const product = products.find(p => p.id === productId);
+      const productData = { ...product, inStock: !product.inStock };
+      
+      const response = await apiService.updateProduct(productId, productData);
+      if (response.success) {
+        setProducts(products.map(p => 
+          p.id === productId ? { ...p, inStock: !p.inStock } : p
+        ));
+        showToast('Product status updated', 'success');
+      }
+    } catch (error) {
+      console.error('Error updating product status:', error);
+      showToast('Failed to update product status', 'error');
+    }
+  };
+
+  const Toast = () => {
+    if (!toast) return null;
+
+    const bgColors = {
+      success: 'bg-green-500',
+      error: 'bg-red-500',
+      warning: 'bg-yellow-500',
+      info: 'bg-blue-500'
     };
-    setProducts([...products, product]);
-    setShowAddProduct(false);
-    setNewProduct({
-      name: '',
-      price: '',
-      category: '',
-      brand: '',
-      description: '',
-      stock: '',
-      image: ''
-    });
-    showToast('Product added successfully', 'success');
+
+    return (
+      <div className={`fixed top-4 right-4 ${bgColors[toast.type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2`}>
+        <CheckCircle className="w-5 h-5" />
+        {toast.message}
+      </div>
+    );
   };
 
-  const updateDelivererStatus = (delivererId, status) => {
-    setDeliverers(deliverers.map(deliverer => 
-      deliverer.id === delivererId ? { ...deliverer, status, online: status === 'active' } : deliverer
-    ));
-    showToast(`Deliverer ${status}`, 'success');
-  };
-
-  const deleteDeliverer = (delivererId) => {
-    setDeliverers(deliverers.filter(deliverer => deliverer.id !== delivererId));
-    showToast('Deliverer removed', 'info');
-  };
-
-  const toggleDelivererOnline = (delivererId) => {
-    setDeliverers(deliverers.map(deliverer => 
-      deliverer.id === delivererId ? { ...deliverer, online: !deliverer.online } : deliverer
-    ));
-    showToast('Deliverer status updated', 'success');
-  };
+  const LoadingSpinner = () => (
+    <div className="flex justify-center items-center py-8">
+      <RefreshCw className="w-8 h-8 text-cyan-500 animate-spin" />
+    </div>
+  );
 
   const AdminDashboard = () => {
+    if (loading.analytics || loading.products || loading.orders || loading.deliverers || loading.customers) {
+      return <LoadingSpinner />;
+    }
+
     return (
       <div className="space-y-6 dark:text-white">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -493,6 +473,8 @@ const AdminPanel = ({ onBackToStore, products: initialProducts, orders: initialO
   };
 
   const DeliverersManagement = () => {
+    if (loading.deliverers) return <LoadingSpinner />;
+
     return (
       <div className="space-y-6 dark:text-white">
         <div className="flex justify-between items-center">
@@ -663,6 +645,8 @@ const AdminPanel = ({ onBackToStore, products: initialProducts, orders: initialO
   };
 
   const CustomersManagement = () => {
+    if (loading.customers) return <LoadingSpinner />;
+
     return (
       <div className="space-y-6 dark:text-white">
         <div className="flex justify-between items-center">
@@ -724,206 +708,9 @@ const AdminPanel = ({ onBackToStore, products: initialProducts, orders: initialO
     );
   };
 
-  const DelivererDetailsModal = () => {
-    if (!selectedDeliverer) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold dark:text-white">Deliverer Details</h2>
-              <button onClick={() => setSelectedDeliverer(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                <X className="w-6 h-6 dark:text-white" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-cyan-100 dark:bg-cyan-900 rounded-full flex items-center justify-center">
-                    <User className="w-8 h-8 text-cyan-600 dark:text-cyan-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold dark:text-white">{selectedDeliverer.name}</h3>
-                    <p className="text-gray-600 dark:text-gray-400">{selectedDeliverer.vehicleType} Driver</p>
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      selectedDeliverer.online ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                    }`}>
-                      {selectedDeliverer.online ? 'Online' : 'Offline'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Email:</span>
-                    <span className="font-semibold dark:text-white">{selectedDeliverer.email}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Phone:</span>
-                    <span className="font-semibold dark:text-white">{selectedDeliverer.phone}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Vehicle:</span>
-                    <span className="font-semibold dark:text-white">{selectedDeliverer.vehicleType}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">License Plate:</span>
-                    <span className="font-semibold dark:text-white">{selectedDeliverer.licensePlate}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Service Area:</span>
-                    <span className="font-semibold dark:text-white">{selectedDeliverer.area}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Current Location:</span>
-                    <span className="font-semibold dark:text-white">{selectedDeliverer.currentLocation}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-3 dark:text-white">Performance Stats</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">{selectedDeliverer.totalDeliveries}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Total Deliveries</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                        <p className="text-2xl font-bold dark:text-white">{selectedDeliverer.rating}</p>
-                      </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Rating</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-3 dark:text-white">Recent Activity</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Joined on {formatDate(selectedDeliverer.joinDate)}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                    Currently {selectedDeliverer.online ? 'available for deliveries' : 'offline'}
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => toggleDelivererOnline(selectedDeliverer.id)}
-                  className={`w-full py-3 rounded-lg font-semibold ${
-                    selectedDeliverer.online 
-                      ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
-                      : 'bg-green-500 hover:bg-green-600 text-white'
-                  }`}
-                >
-                  {selectedDeliverer.online ? 'Take Offline' : 'Bring Online'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const CustomerDetailsModal = () => {
-    if (!selectedCustomer) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold dark:text-white">Customer Details</h2>
-              <button onClick={() => setSelectedCustomer(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                <X className="w-6 h-6 dark:text-white" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
-                    <User className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold dark:text-white">{selectedCustomer.name}</h3>
-                    <p className="text-gray-600 dark:text-gray-400">Loyal Customer</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Member since {formatDate(selectedCustomer.joinDate)}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Email:</span>
-                    <span className="font-semibold dark:text-white">{selectedCustomer.email}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Phone:</span>
-                    <span className="font-semibold dark:text-white">{selectedCustomer.phone}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Favorite Category:</span>
-                    <span className="font-semibold dark:text-white capitalize">{selectedCustomer.favoriteCategory}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Last Order:</span>
-                    <span className="font-semibold dark:text-white">{formatDate(selectedCustomer.lastOrder)}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2 dark:text-white">Delivery Address</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{selectedCustomer.address}</p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-3 dark:text-white">Purchase Summary</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">{selectedCustomer.totalOrders}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Total Orders</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-green-600 dark:text-green-400">{formatPrice(selectedCustomer.totalSpent)}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Total Spent</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 text-center">
-                    <p className="text-lg font-semibold dark:text-white">
-                      {formatPrice(selectedCustomer.totalSpent / selectedCustomer.totalOrders)}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Average Order Value</p>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-3 dark:text-white">Customer Status</h4>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${
-                      selectedCustomer.totalOrders > 5 ? 'bg-green-500' : 
-                      selectedCustomer.totalOrders > 2 ? 'bg-yellow-500' : 'bg-blue-500'
-                    }`}></div>
-                    <span className="font-semibold dark:text-white">
-                      {selectedCustomer.totalOrders > 5 ? 'VIP Customer' : 
-                       selectedCustomer.totalOrders > 2 ? 'Regular Customer' : 'New Customer'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const AnalyticsPage = () => {
+    if (loading.analytics) return <LoadingSpinner />;
+
     return (
       <div className="space-y-6 dark:text-white">
         <div className="flex justify-between items-center">
@@ -1013,19 +800,7 @@ const AdminPanel = ({ onBackToStore, products: initialProducts, orders: initialO
   };
 
   const ProductsManagement = () => {
-    const deleteProduct = (productId) => {
-      setProducts(products.filter(product => product.id !== productId));
-      showToast('Product deleted', 'info');
-    };
-
-    const toggleProductStatus = (productId) => {
-      setProducts(products.map(product => 
-        product.id === productId 
-          ? { ...product, inStock: !product.inStock }
-          : product
-      ));
-      showToast('Product status updated', 'success');
-    };
+    if (loading.products) return <LoadingSpinner />;
 
     return (
       <div className="space-y-6 dark:text-white">
@@ -1093,273 +868,6 @@ const AdminPanel = ({ onBackToStore, products: initialProducts, orders: initialO
     );
   };
 
-  const AddProductModal = () => {
-    if (!showAddProduct) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold dark:text-white">Add New Product</h2>
-              <button onClick={() => setShowAddProduct(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                <X className="w-6 h-6 dark:text-white" />
-              </button>
-            </div>
-
-            <form onSubmit={handleAddProduct} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Product Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={newProduct.name}
-                    onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                    className="w-full px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500"
-                    placeholder="Enter product name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Price (UGX)</label>
-                  <input
-                    type="number"
-                    required
-                    value={newProduct.price}
-                    onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
-                    className="w-full px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500"
-                    placeholder="Enter price"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
-                  <select
-                    required
-                    value={newProduct.category}
-                    onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
-                    className="w-full px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500"
-                  >
-                    <option value="">Select Category</option>
-                    <option value="phones">Phones</option>
-                    <option value="electronics">Electronics</option>
-                    <option value="fashion">Fashion</option>
-                    <option value="home">Home & Garden</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Brand</label>
-                  <input
-                    type="text"
-                    required
-                    value={newProduct.brand}
-                    onChange={(e) => setNewProduct({...newProduct, brand: e.target.value})}
-                    className="w-full px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500"
-                    placeholder="Enter brand"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stock Quantity</label>
-                  <input
-                    type="number"
-                    required
-                    value={newProduct.stock}
-                    onChange={(e) => setNewProduct({...newProduct, stock: e.target.value})}
-                    className="w-full px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500"
-                    placeholder="Enter stock quantity"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Image URL</label>
-                  <input
-                    type="url"
-                    required
-                    value={newProduct.image}
-                    onChange={(e) => setNewProduct({...newProduct, image: e.target.value})}
-                    className="w-full px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500"
-                    placeholder="Enter image URL"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                <textarea
-                  required
-                  value={newProduct.description}
-                  onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
-                  rows="3"
-                  className="w-full px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500"
-                  placeholder="Enter product description"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 bg-cyan-500 text-white py-3 rounded-lg font-semibold hover:bg-cyan-600"
-                >
-                  Add Product
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAddProduct(false)}
-                  className="flex-1 border border-gray-300 dark:border-gray-600 dark:text-white py-3 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const OrderDetailsModal = () => {
-    if (!selectedOrder) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold dark:text-white">Order Details - #{selectedOrder.orderNumber}</h2>
-              <button onClick={() => setSelectedOrder(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                <X className="w-6 h-6 dark:text-white" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-4 dark:text-white">Order Items</h3>
-                <div className="space-y-3">
-                  {selectedOrder.items?.map((item, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 border dark:border-gray-700 rounded-lg">
-                      <img src={item.image} alt={item.name} className="w-16 h-16 rounded object-cover" />
-                      <div className="flex-1">
-                        <p className="font-semibold dark:text-white">{item.name}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Qty: {item.quantity}</p>
-                        <p className="text-cyan-600 dark:text-cyan-400 font-bold">{formatPrice(item.price * item.quantity)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-4 dark:text-white">Order Information</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Order Date:</span>
-                    <span className="font-semibold dark:text-white">{formatDate(selectedOrder.date)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Status:</span>
-                    <span className={`px-2 py-1 rounded-full text-sm ${
-                      selectedOrder.status === 'Delivered' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
-                      selectedOrder.status === 'Processing' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' :
-                      'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
-                    }`}>
-                      {selectedOrder.status}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Payment Method:</span>
-                    <span className="font-semibold dark:text-white">{selectedOrder.paymentMethod}</span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold border-t dark:border-gray-700 pt-3">
-                    <span className="dark:text-white">Total Amount:</span>
-                    <span className="text-cyan-600 dark:text-cyan-400">{formatPrice(selectedOrder.total)}</span>
-                  </div>
-                </div>
-
-                {selectedOrder.shippingAddress && (
-                  <div className="mt-6">
-                    <h4 className="font-semibold mb-2 dark:text-white">Shipping Address</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {selectedOrder.shippingAddress.fullName}<br />
-                      {selectedOrder.shippingAddress.address}<br />
-                      {selectedOrder.shippingAddress.city}<br />
-                      {selectedOrder.shippingAddress.phone}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const ProductDetailsModal = () => {
-    if (!selectedProduct) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold dark:text-white">{selectedProduct.name}</h2>
-              <button onClick={() => setSelectedProduct(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                <X className="w-6 h-6 dark:text-white" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <img src={selectedProduct.image} alt={selectedProduct.name} className="w-full h-80 object-cover rounded-lg" />
-              
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-lg dark:text-white">Product Details</h3>
-                  <p className="text-gray-600 dark:text-gray-400">{selectedProduct.description}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Category</p>
-                    <p className="font-semibold dark:text-white capitalize">{selectedProduct.category}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Brand</p>
-                    <p className="font-semibold dark:text-white">{selectedProduct.brand}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Price</p>
-                    <p className="font-semibold text-cyan-600 dark:text-cyan-400">{formatPrice(selectedProduct.price)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Stock</p>
-                    <p className="font-semibold dark:text-white">{selectedProduct.stock} units</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                  <span className="font-semibold dark:text-white">{selectedProduct.rating}</span>
-                  <span className="text-gray-500 dark:text-gray-400">({selectedProduct.reviews} reviews)</span>
-                </div>
-
-                {selectedProduct.sales && (
-                  <div className="bg-green-50 dark:bg-green-900 p-4 rounded-lg">
-                    <p className="text-green-800 dark:text-green-300 font-semibold">
-                      {selectedProduct.sales} units sold • {formatPrice(selectedProduct.revenue)} revenue
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const adminTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'analytics', label: 'Analytics', icon: PieChart },
@@ -1370,6 +878,7 @@ const AdminPanel = ({ onBackToStore, products: initialProducts, orders: initialO
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Toast />
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
@@ -1391,7 +900,14 @@ const AdminPanel = ({ onBackToStore, products: initialProducts, orders: initialO
                 onClick={() => setDarkMode(!darkMode)}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
               >
-                {darkMode ? <Sun className="w-5 h-5 dark:text-yellow-400" /> : <Moon className="w-5 h-5 dark:text-gray-300" />}
+                {darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-gray-600" />}
+              </button>
+              <button
+                onClick={loadDashboardData}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                title="Refresh Data"
+              >
+                <RefreshCw className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -1429,12 +945,6 @@ const AdminPanel = ({ onBackToStore, products: initialProducts, orders: initialO
           </div>
         </div>
       </div>
-
-      <OrderDetailsModal />
-      <ProductDetailsModal />
-      <DelivererDetailsModal />
-      <CustomerDetailsModal />
-      <AddProductModal />
     </div>
   );
 };

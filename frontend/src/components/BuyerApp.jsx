@@ -3,7 +3,7 @@ import { ShoppingCart, Search, Menu, Heart, User, Star, TrendingUp, Smartphone, 
 import AdminPanel from './AdminPanel';
 import { apiService } from '../services/api';
 
-function App() {
+function BuyerApp() {
   const [cart, setCart] = useState([]);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -40,10 +40,10 @@ function App() {
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [returnForm, setReturnForm] = useState({ orderNumber: null, reason: '' });
-  const initialProducts = [
   
-];
-  
+  // REMOVED: initialProducts array and hardcoded products data
+  const [products, setProducts] = useState([]);
+
   const [checkoutData, setCheckoutData] = useState({
     fullName: '',
     email: '',
@@ -70,226 +70,14 @@ function App() {
     { id: 'home', name: 'Home & Garden', icon: Home },
   ];
 
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: 'Samsung Galaxy S24 Ultra',
-      price: 3299000,
-      oldPrice: 3799000,
-      category: 'phones',
-      brand: 'Samsung',
-      image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&h=400&fit=crop',
-      rating: 4.5,
-      reviews: 234,
-      discount: 13,
-      inStock: true,
-      stock: 5,
-      views: 1250,
-      description: 'The Samsung Galaxy S24 Ultra features a stunning 6.8-inch display, powerful Snapdragon processor, and an incredible 200MP camera system.',
-      specs: ['256GB Storage', '12GB RAM', '200MP Camera', '5000mAh Battery', '5G Enabled'],
-      colors: ['Black', 'White', 'Purple'],
-      sizes: ['Standard'],
-      images: [
-        'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&h=800&fit=crop'
-      ],
-      flashSale: true,
-      flashSaleEnd: Date.now() + 3600000,
-      bulkDiscount: { quantity: 2, discount: 0.05 }
-    },
-    {
-      id: 2,
-      name: 'Apple iPhone 15 Pro Max',
-      price: 4500000,
-      oldPrice: 5000000,
-      category: 'phones',
-      brand: 'Apple',
-      image: 'https://images.unsplash.com/photo-1695048064537-18e076d1c7b5?w=400&h=400&fit=crop',
-      rating: 4.8,
-      reviews: 567,
-      discount: 10,
-      inStock: true,
-      stock: 12,
-      views: 2340,
-      description: 'Experience the power of A17 Pro chip with the iPhone 15 Pro Max. Featuring titanium design and advanced camera system.',
-      specs: ['512GB Storage', 'A17 Pro Chip', 'Pro Camera System', 'Titanium Design', 'USB-C'],
-      colors: ['Titanium', 'Blue', 'White', 'Black'],
-      sizes: ['Standard'],
-      images: [
-        'https://images.unsplash.com/photo-1695048064537-18e076d1c7b5?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1695048064537-18e076d1c7b5?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1695048064537-18e076d1c7b5?w=800&h=800&fit=crop'
-      ],
-      flashSale: false,
-      bulkDiscount: { quantity: 3, discount: 0.08 }
-    },
-    {
-      id: 3,
-      name: 'Dell XPS 15 Laptop',
-      price: 2800000,
-      oldPrice: 3200000,
-      category: 'electronics',
-      brand: 'Dell',
-      image: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=400&h=400&fit=crop',
-      rating: 4.6,
-      reviews: 189,
-      discount: 13,
-      inStock: true,
-      stock: 8,
-      views: 890,
-      description: 'Premium laptop with stunning InfinityEdge display and powerful Intel processor.',
-      specs: ['Intel Core i7', '16GB RAM', '512GB SSD', '15.6" 4K Display', 'NVIDIA Graphics'],
-      colors: ['Silver', 'Black'],
-      sizes: ['15.6"'],
-      images: [
-        'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800&h=800&fit=crop'
-      ],
-      flashSale: true,
-      flashSaleEnd: Date.now() + 7200000,
-      bulkDiscount: null
-    },
-    {
-      id: 4,
-      name: 'Sony WH-1000XM5 Headphones',
-      price: 850000,
-      oldPrice: 1000000,
-      category: 'electronics',
-      brand: 'Sony',
-      image: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=400&h=400&fit=crop',
-      rating: 4.7,
-      reviews: 423,
-      discount: 15,
-      inStock: true,
-      stock: 15,
-      views: 1560,
-      description: 'Industry-leading noise cancellation with exceptional sound quality and 30-hour battery life.',
-      specs: ['Active Noise Cancellation', '30-Hour Battery', 'Premium Sound', 'Multipoint Connection', 'Touch Controls'],
-      colors: ['Black', 'Silver'],
-      sizes: ['One Size'],
-      images: [
-        'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=800&h=800&fit=crop'
-      ],
-      flashSale: false,
-      bulkDiscount: { quantity: 2, discount: 0.10 }
-    },
-    {
-      id: 5,
-      name: 'Men\'s Casual Shirt',
-      price: 45000,
-      oldPrice: 65000,
-      category: 'fashion',
-      brand: 'StyleHub',
-      image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&h=400&fit=crop',
-      rating: 4.2,
-      reviews: 89,
-      discount: 31,
-      inStock: true,
-      stock: 25,
-      views: 450,
-      description: 'Comfortable and stylish casual shirt perfect for everyday wear.',
-      specs: ['100% Cotton', 'Regular Fit', 'Machine Washable', 'Multiple Colors', 'Sizes S-XXL'],
-      colors: ['Blue', 'White', 'Black', 'Red'],
-      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-      images: [
-        'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&h=800&fit=crop'
-      ],
-      flashSale: false,
-      bulkDiscount: { quantity: 3, discount: 0.15 }
-    },
-    {
-      id: 6,
-      name: 'Women\'s Summer Dress',
-      price: 55000,
-      oldPrice: 80000,
-      category: 'fashion',
-      brand: 'FashionPro',
-      image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=400&fit=crop',
-      rating: 4.4,
-      reviews: 156,
-      discount: 31,
-      inStock: true,
-      stock: 18,
-      views: 680,
-      description: 'Elegant summer dress with beautiful floral pattern.',
-      specs: ['Lightweight Fabric', 'Floral Pattern', 'Comfortable Fit', 'Easy Care', 'Sizes XS-XL'],
-      colors: ['Floral Blue', 'Floral Pink', 'Floral Yellow'],
-      sizes: ['XS', 'S', 'M', 'L', 'XL'],
-      images: [
-        'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&h=800&fit=crop'
-      ],
-      flashSale: true,
-      flashSaleEnd: Date.now() + 5400000,
-      bulkDiscount: null
-    },
-    {
-      id: 7,
-      name: 'Smart LED TV 55"',
-      price: 1200000,
-      oldPrice: 1500000,
-      category: 'electronics',
-      brand: 'TechVision',
-      image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&h=400&fit=crop',
-      rating: 4.5,
-      reviews: 267,
-      discount: 20,
-      inStock: true,
-      stock: 6,
-      views: 1120,
-      description: 'Experience stunning 4K visuals with this 55-inch Smart LED TV.',
-      specs: ['4K Ultra HD', 'Smart TV', 'HDR Support', 'Built-in WiFi', 'Multiple HDMI Ports'],
-      colors: ['Black'],
-      sizes: ['55"'],
-      images: [
-        'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&h=800&fit=crop'
-      ],
-      flashSale: false,
-      bulkDiscount: null
-    },
-    {
-      id: 8,
-      name: 'Modern Sofa Set',
-      price: 1800000,
-      oldPrice: 2300000,
-      category: 'home',
-      brand: 'ComfortHome',
-      image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop',
-      rating: 4.3,
-      reviews: 78,
-      discount: 22,
-      inStock: true,
-      stock: 3,
-      views: 340,
-      description: 'Luxurious 3-seater sofa set with premium upholstery.',
-      specs: ['3-Seater', 'Premium Fabric', 'Solid Wood Frame', 'Easy Assembly', 'Multiple Colors'],
-      colors: ['Grey', 'Beige', 'Navy'],
-      sizes: ['Standard'],
-      images: [
-        'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=800&fit=crop'
-      ],
-      flashSale: false,
-      bulkDiscount: null
-    },
-  ]);
+  // REMOVED: Hardcoded products array completely
 
   useEffect(() => {
     const loadInitialData = async () => {
       try {
         // Use apiService for all API calls
         const [productsData, ordersData] = await Promise.all([
-          apiService.getProducts().catch(() => products),
+          apiService.getProducts(),
           apiService.getOrders().catch(() => []),
         ]);
 
@@ -299,26 +87,25 @@ function App() {
         // Check authentication status
         const token = localStorage.getItem('token');
         const userData = localStorage.getItem('user');
-        if (showAdminPanel) {
-  return (
-    <AdminPanel
-      onBackToStore={() => setShowAdminPanel(false)}
-      products={products}
-      orders={orders}
-      darkMode={darkMode}
-      setDarkMode={setDarkMode}
-    />
-  );
-}
+        
         if (token && userData) {
           setUser(JSON.parse(userData));
           apiService.setToken(token);
+          
+          // Load user-specific data
+          const [addressesData, ticketsData] = await Promise.all([
+            apiService.getAddresses().catch(() => []),
+            apiService.getTickets().catch(() => [])
+          ]);
+          
+          setAddresses(addressesData);
+          setTickets(ticketsData);
         }
 
       } catch (error) {
         console.error('Failed to load initial data:', error);
-        // Fallback to local products
-        setProducts(initialProducts);
+        // Don't fallback to local products - keep empty array
+        setProducts([]);
       }
     };
 
@@ -330,11 +117,7 @@ function App() {
     const sync = async () => {
       if (!cart || cart.length === 0) return;
       try {
-        await fetch('/api/cart', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ items: cart })
-        });
+        await apiService.syncCart(cart);
       } catch (err) {
         // non-fatal; keep local cart
         console.warn('Cart sync failed', err);
@@ -350,39 +133,53 @@ function App() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const addToCart = (product, selectedColor = null, selectedSize = null) => {
+  const addToCart = async (product, selectedColor = null, selectedSize = null) => {
     const existing = cart.find(item => 
       item.id === product.id && 
       item.selectedColor === selectedColor && 
       item.selectedSize === selectedSize
     );
     
+    let newCart;
     if (existing) {
-      setCart(cart.map(item =>
+      newCart = cart.map(item =>
         item.id === product.id && 
         item.selectedColor === selectedColor && 
         item.selectedSize === selectedSize
           ? { ...item, quantity: item.quantity + 1 }
           : item
-      ));
+      );
       showToast(`Updated quantity for ${product.name}`, 'success');
     } else {
-      setCart([...cart, { ...product, quantity: 1, selectedColor, selectedSize }]);
+      newCart = [...cart, { ...product, quantity: 1, selectedColor, selectedSize }];
       showToast(`${product.name} added to cart!`, 'success');
+    }
+    
+    setCart(newCart);
+    
+    // Sync cart to backend
+    try {
+      await apiService.syncCart(newCart);
+    } catch (error) {
+      console.error('Failed to sync cart:', error);
     }
   };
 
   const removeFromCart = (productId, selectedColor, selectedSize) => {
-    setCart(cart.filter(item => 
+    const newCart = cart.filter(item => 
       !(item.id === productId && 
         item.selectedColor === selectedColor && 
         item.selectedSize === selectedSize)
-    ));
+    );
+    setCart(newCart);
     showToast('Item removed from cart', 'info');
+    
+    // Sync updated cart
+    apiService.syncCart(newCart).catch(console.error);
   };
 
   const updateQuantity = (productId, selectedColor, selectedSize, delta) => {
-    setCart(cart.map(item => {
+    const newCart = cart.map(item => {
       if (item.id === productId && 
           item.selectedColor === selectedColor && 
           item.selectedSize === selectedSize) {
@@ -390,7 +187,12 @@ function App() {
         return newQuantity > 0 ? { ...item, quantity: newQuantity } : item;
       }
       return item;
-    }).filter(item => item.quantity > 0));
+    }).filter(item => item.quantity > 0);
+    
+    setCart(newCart);
+    
+    // Sync updated cart
+    apiService.syncCart(newCart).catch(console.error);
   };
 
   const toggleWishlist = (productId) => {
@@ -426,12 +228,17 @@ function App() {
     }
   };
 
-  const applyPromoCode = () => {
-    const promo = promoCodes[promoCode.toUpperCase()];
-    if (promo) {
-      setAppliedPromo(promo);
-      showToast(`Promo code applied! ${promo.type === 'percentage' ? (promo.discount * 100) + '%' : 'UGX ' + promo.discount} off`, 'success');
-    } else {
+  const applyPromoCode = async () => {
+    try {
+      const response = await apiService.validatePromoCode(promoCode.toUpperCase());
+      if (response.success && response.data.valid) {
+        setAppliedPromo(response.data.promo);
+        showToast(`Promo code applied! ${response.data.promo.type === 'percentage' ? (response.data.promo.discount * 100) + '%' : 'UGX ' + response.data.promo.discount} off`, 'success');
+      } else {
+        showToast(response.message || 'Invalid promo code', 'error');
+      }
+    } catch (error) {
+      console.error('Error validating promo code:', error);
       showToast('Invalid promo code', 'error');
     }
   };
@@ -446,24 +253,35 @@ function App() {
     });
   };
 
-  const submitReview = (productId, rating, comment) => {
+  const submitReview = async (productId, rating, comment) => {
     if (!user) {
       showToast('Please login to leave a review', 'warning');
       setShowAuthModal(true);
       return;
     }
-    const newReview = {
-      id: Date.now(),
-      userName: user.name,
-      rating,
-      comment,
-      date: new Date().toISOString()
-    };
-    setProductReviews(prev => ({
-      ...prev,
-      [productId]: [...(prev[productId] || []), newReview]
-    }));
-    showToast('Review submitted!', 'success');
+    
+    try {
+      const reviewData = {
+        rating,
+        comment,
+        userId: user.id,
+        userName: user.name
+      };
+      
+      const response = await apiService.submitReview(productId, reviewData);
+      if (response.success) {
+        setProductReviews(prev => ({
+          ...prev,
+          [productId]: [...(prev[productId] || []), response.data]
+        }));
+        showToast('Review submitted!', 'success');
+      } else {
+        showToast(response.message || 'Failed to submit review', 'error');
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      showToast('Failed to submit review', 'error');
+    }
   };
 
   const requestReturn = (orderNumber, reason) => {
@@ -708,11 +526,46 @@ function App() {
   const AuthModal = () => {
     if (!showAuthModal) return null;
 
-    const handleAuth = (e) => {
+    const handleAuth = async (e) => {
       e.preventDefault();
-      setUser({ name: 'John Doe', email: 'john@example.com' });
-      setShowAuthModal(false);
-      showToast(authMode === 'login' ? 'Logged in successfully!' : 'Account created!', 'success');
+      
+      try {
+        let response;
+        if (authMode === 'login') {
+          const email = document.getElementById('login-email').value;
+          const password = document.getElementById('login-password').value;
+          response = await apiService.login(email, password);
+        } else {
+          const name = document.getElementById('register-name').value;
+          const email = document.getElementById('register-email').value;
+          const password = document.getElementById('register-password').value;
+          response = await apiService.register({ name, email, password });
+        }
+        
+        if (response.success) {
+          setUser(response.data.user);
+          apiService.setToken(response.data.token);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+          setShowAuthModal(false);
+          showToast(authMode === 'login' ? 'Logged in successfully!' : 'Account created!', 'success');
+          
+          // Load user data after login
+          const [ordersData, addressesData, ticketsData] = await Promise.all([
+            apiService.getOrders().catch(() => []),
+            apiService.getAddresses().catch(() => []),
+            apiService.getTickets().catch(() => [])
+          ]);
+          
+          setOrders(ordersData);
+          setAddresses(addressesData);
+          setTickets(ticketsData);
+        } else {
+          showToast(response.message || 'Authentication failed', 'error');
+        }
+      } catch (error) {
+        console.error('Authentication error:', error);
+        showToast('Authentication failed', 'error');
+      }
     };
 
     return (
@@ -727,6 +580,7 @@ function App() {
           <form onSubmit={handleAuth} className="space-y-4">
             {authMode === 'register' && (
               <input
+                id="register-name"
                 type="text"
                 placeholder="Full Name"
                 required
@@ -734,12 +588,14 @@ function App() {
               />
             )}
             <input
+              id={authMode === 'login' ? 'login-email' : 'register-email'}
               type="email"
               placeholder="Email"
               required
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500"
             />
             <input
+              id={authMode === 'login' ? 'login-password' : 'register-password'}
               type="password"
               placeholder="Password"
               required
@@ -1019,48 +875,71 @@ function App() {
     );
   };
 
+  // MOVE THE ADMIN PANEL CHECK TO THE BEGINNING OF THE MAIN RENDER
+  if (showAdminPanel) {
+    return (
+      <AdminPanel
+        onBackToStore={() => setShowAdminPanel(false)}
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
+      />
+    );
+  }
+
   if (currentView === 'checkout') {
     const totals = calculateTotal();
 
-    const completeOrder = (e) => {
+    const completeOrder = async (e) => {
       e.preventDefault();
-      const orderNumber = Math.random().toString(36).substr(2, 9).toUpperCase();
-      const newOrder = {
-        orderNumber,
-        date: new Date().toISOString(),
-        items: cart,
-        total: totals.total,
-        status: 'Processing',
-        tracking: 'TRK' + Date.now(),
-        paymentMethod: checkoutData.paymentMethod,
-        shippingAddress: {
-          fullName: checkoutData.fullName,
-          email: checkoutData.email,
-          phone: checkoutData.phone,
-          address: checkoutData.address,
-          city: checkoutData.city,
-          postalCode: checkoutData.postalCode
-        }
-      };
-      setOrders([...orders, newOrder]);
-      if (checkoutData.saveAddress) {
-        const addr = {
-          id: 'ADDR' + Date.now(),
-          fullName: checkoutData.fullName,
-          email: checkoutData.email,
-          phone: checkoutData.phone,
-          address: checkoutData.address,
-          city: checkoutData.city,
-          postalCode: checkoutData.postalCode
+      
+      try {
+        const orderData = {
+          items: cart,
+          total: totals.total,
+          shippingAddress: {
+            fullName: checkoutData.fullName,
+            email: checkoutData.email,
+            phone: checkoutData.phone,
+            address: checkoutData.address,
+            city: checkoutData.city,
+            postalCode: checkoutData.postalCode
+          },
+          paymentMethod: checkoutData.paymentMethod,
+          giftWrap: checkoutData.giftWrap,
+          discount: appliedPromo ? totals.discount : 0,
+          tax: totals.tax
         };
-        setAddresses(prev => {
-          const exists = prev.some(a => a.address === addr.address && a.phone === addr.phone);
-          return exists ? prev : [...prev, addr];
-        });
+        
+        const response = await apiService.createOrder(orderData);
+        if (response.success) {
+          setOrders([...orders, response.data]);
+          
+          if (checkoutData.saveAddress) {
+            const addr = {
+              fullName: checkoutData.fullName,
+              email: checkoutData.email,
+              phone: checkoutData.phone,
+              address: checkoutData.address,
+              city: checkoutData.city,
+              postalCode: checkoutData.postalCode
+            };
+            
+            const addressResponse = await apiService.createAddress(addr);
+            if (addressResponse.success) {
+              setAddresses(prev => [...prev, addressResponse.data]);
+            }
+          }
+          
+          setCart([]);
+          setCurrentView('success');
+          showToast('Order placed successfully!', 'success');
+        } else {
+          showToast(response.message || 'Failed to place order', 'error');
+        }
+      } catch (error) {
+        console.error('Error creating order:', error);
+        showToast('Failed to place order', 'error');
       }
-      setCart([]);
-      setCurrentView('success');
-      showToast('Order placed successfully!', 'success');
     };
 
     return (
@@ -1323,7 +1202,7 @@ function App() {
                     <div className="flex justify-between text-green-600">
                       <span>Discount:</span>
                       <span className="font-semibold">-{formatPrice(totals.discount)}</span>
-                    </div>
+                  </div>
                   )}
                   <div className="flex justify-between">
                     <span>Tax (18%):</span>
@@ -1837,6 +1716,7 @@ function App() {
     return <AccountView />;
   }
 
+  // Main buyer app view
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
       <Toast />
@@ -1849,7 +1729,7 @@ function App() {
       <CartSidebar />
       
       {zoomedImage && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4" onClick={() => setZoomedImage(null)}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4" onClick={() => setZoomedImage(null)}>
           <img src={zoomedImage} alt="Zoomed" className="max-w-full max-h-full object-contain" />
         </div>
       )}
@@ -2260,4 +2140,4 @@ function App() {
   );
 }
 
-export default App
+export default BuyerApp;
