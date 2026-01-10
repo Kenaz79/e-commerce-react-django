@@ -124,17 +124,16 @@ const AdminPanel = ({ onBackToStore, darkMode, setDarkMode }) => {
     setTimeout(() => setToast(null), 3000);
   };
 
- const handleAddDeliverer = async (e) => {
+const handleAddDeliverer = async (e) => {
   e.preventDefault();
-  e.stopPropagation();
   
   try {
     const delivererData = {
       name: newDeliverer.name,
       email: newDeliverer.email,
       phone: newDeliverer.phone,
-      vehicle_type: newDeliverer.vehicleType,  // snake_case
-      license_plate: newDeliverer.licensePlate, // snake_case
+      vehicle_type: newDeliverer.vehicleType,
+      license_plate: newDeliverer.licensePlate,
       area: newDeliverer.area,
       status: 'active',
       online: true
@@ -143,7 +142,6 @@ const AdminPanel = ({ onBackToStore, darkMode, setDarkMode }) => {
     console.log('Sending deliverer data:', delivererData);
     const response = await apiService.createDeliverer(delivererData);
     
-    // Update the deliverers list with the new deliverer
     setDeliverers([...deliverers, response]);
     setShowAddDeliverer(false);
     setNewDeliverer({
@@ -490,8 +488,58 @@ const AdminPanel = ({ onBackToStore, darkMode, setDarkMode }) => {
     );
   };
 
-  const DeliverersManagement = () => {
+ const DeliverersManagement = () => {
     if (loading.deliverers) return <LoadingSpinner />;
+    
+    // Add local state for the form
+    const [localDeliverer, setLocalDeliverer] = useState({
+      name: '',
+      email: '',
+      phone: '',
+      vehicleType: '',
+      licensePlate: '',
+      area: ''
+    });
+
+    // Create a local handleAddDeliverer function
+    const localHandleAddDeliverer = async (e) => {
+      e.preventDefault();
+      
+      try {
+        const delivererData = {
+          name: localDeliverer.name,
+          email: localDeliverer.email,
+          phone: localDeliverer.phone,
+          vehicle_type: localDeliverer.vehicleType,
+          license_plate: localDeliverer.licensePlate,
+          area: localDeliverer.area,
+          //status: 'Active',
+          online: true
+        };
+
+        console.log('Sending deliverer data:', delivererData);
+        const response = await apiService.createDeliverer(delivererData);
+        
+        // Update the main state
+        setDeliverers([...deliverers, response]);
+        
+        // Close modal and reset local state
+        setShowAddDeliverer(false);
+        setLocalDeliverer({
+          name: '',
+          email: '',
+          phone: '',
+          vehicleType: '',
+          licensePlate: '',
+          area: ''
+        });
+        
+        showToast('Deliverer added successfully', 'success');
+      } catch (error) {
+        console.error('Error adding deliverer:', error);
+        showToast(error.message || 'Failed to add deliverer', 'error');
+      }
+    };
 
     return (
       <div className="space-y-6 dark:text-white">
@@ -511,38 +559,53 @@ const AdminPanel = ({ onBackToStore, darkMode, setDarkMode }) => {
             <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold dark:text-white">Add New Deliverer</h3>
-                <button type="button" onClick={() => setShowAddDeliverer(false)}>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setShowAddDeliverer(false);
+                    // Reset form when closing
+                    setLocalDeliverer({
+                      name: '',
+                      email: '',
+                      phone: '',
+                      vehicleType: '',
+                      licensePlate: '',
+                      area: ''
+                    });
+                  }}
+                >
                   <X className="w-5 h-5 dark:text-white" />
                 </button>
               </div>
-              <form onSubmit={handleAddDeliverer} className="space-y-4">
+              <form onSubmit={localHandleAddDeliverer} className="space-y-4">
                 <input
                   type="text"
                   placeholder="Full Name"
-                  value={newDeliverer.name}
-                  onChange={(e) => setNewDeliverer({...newDeliverer, name: e.target.value})}
+                  value={localDeliverer.name}
+                  onChange={(e) => setLocalDeliverer({...localDeliverer, name: e.target.value})}
                   className="w-full px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500"
                   required
+                  autoFocus
                 />
                 <input
                   type="email"
                   placeholder="Email"
-                  value={newDeliverer.email}
-                  onChange={(e) => setNewDeliverer({...newDeliverer, email: e.target.value})}
+                  value={localDeliverer.email}
+                  onChange={(e) => setLocalDeliverer({...localDeliverer, email: e.target.value})}
                   className="w-full px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500"
                   required
                 />
                 <input
                   type="tel"
                   placeholder="Phone"
-                  value={newDeliverer.phone}
-                  onChange={(e) => setNewDeliverer({...newDeliverer, phone: e.target.value})}
+                  value={localDeliverer.phone}
+                  onChange={(e) => setLocalDeliverer({...localDeliverer, phone: e.target.value})}
                   className="w-full px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500"
                   required
                 />
                 <select
-                  value={newDeliverer.vehicleType}
-                  onChange={(e) => setNewDeliverer({...newDeliverer, vehicleType: e.target.value})}
+                  value={localDeliverer.vehicleType}
+                  onChange={(e) => setLocalDeliverer({...localDeliverer, vehicleType: e.target.value})}
                   className="w-full px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500"
                   required
                 >
@@ -555,16 +618,16 @@ const AdminPanel = ({ onBackToStore, darkMode, setDarkMode }) => {
                 <input
                   type="text"
                   placeholder="License Plate"
-                  value={newDeliverer.licensePlate}
-                  onChange={(e) => setNewDeliverer({...newDeliverer, licensePlate: e.target.value})}
+                  value={localDeliverer.licensePlate}
+                  onChange={(e) => setLocalDeliverer({...localDeliverer, licensePlate: e.target.value})}
                   className="w-full px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500"
                   required
                 />
                 <input
                   type="text"
                   placeholder="Service Area"
-                  value={newDeliverer.area}
-                  onChange={(e) => setNewDeliverer({...newDeliverer, area: e.target.value})}
+                  value={localDeliverer.area}
+                  onChange={(e) => setLocalDeliverer({...localDeliverer, area: e.target.value})}
                   className="w-full px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500"
                   required
                 />
@@ -577,7 +640,17 @@ const AdminPanel = ({ onBackToStore, darkMode, setDarkMode }) => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setShowAddDeliverer(false)}
+                    onClick={() => {
+                      setShowAddDeliverer(false);
+                      setLocalDeliverer({
+                        name: '',
+                        email: '',
+                        phone: '',
+                        vehicleType: '',
+                        licensePlate: '',
+                        area: ''
+                      });
+                    }}
                     className="flex-1 border border-gray-300 dark:border-gray-600 dark:text-white py-2 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                     Cancel
