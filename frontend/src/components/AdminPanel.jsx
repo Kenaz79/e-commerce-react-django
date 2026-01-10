@@ -78,32 +78,40 @@ const AdminPanel = ({ onBackToStore, darkMode, setDarkMode }) => {
   }, []);
 
   const loadDashboardData = async () => {
-    try {
-      setLoading(prev => ({ ...prev, products: true, orders: true, deliverers: true, customers: true, analytics: true }));
-      
-      const [productsData, ordersData, deliverersData, customersData, analyticsData, purchaseAnalyticsData] = await Promise.all([
-        apiService.getProducts(),
-        apiService.getOrders(),
-        apiService.getDeliverers(),
-        apiService.getCustomers(),
-        apiService.getAnalytics(),
-        apiService.getPurchaseAnalytics()
-      ]);
+  try {
+    setLoading(prev => ({ ...prev, products: true, orders: true, deliverers: true, customers: true, analytics: true }));
+    
+    const [productsData, ordersData, deliverersData, analyticsData] = await Promise.all([
+      apiService.getProducts(),
+      apiService.getAllOrders(),  // Changed from getOrders
+      apiService.getDeliverersForAdmin(),  // Changed from getDeliverers
+      apiService.getAnalytics()
+      // Removed getCustomers() and getPurchaseAnalytics() - they don't exist in api.js
+    ]);
 
-      setProducts(productsData);
-      setOrders(ordersData);
-      setDeliverers(deliverersData);
-      setCustomers(customersData);
-      setAnalytics(analyticsData);
-      setPurchaseAnalytics(purchaseAnalyticsData);
+    setProducts(productsData);
+    setOrders(ordersData);
+    setDeliverers(deliverersData);
+    setAnalytics(analyticsData);
+    
+    // Set mock data for customers and purchase analytics until backend is ready
+    setCustomers([]);
+    setPurchaseAnalytics({
+      byCategory: [],
+      byPriceRange: [],
+      bySize: [],
+      topCustomers: [],
+      salesTrend: [],
+      deliveryPerformance: []
+    });
 
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-      showToast('Failed to load data. Please try again.', 'error');
-    } finally {
-      setLoading(prev => ({ ...prev, products: false, orders: false, deliverers: false, customers: false, analytics: false }));
-    }
-  };
+  } catch (error) {
+    console.error('Failed to load dashboard data:', error);
+    showToast('Failed to load data. Please try again.', 'error');
+  } finally {
+    setLoading(prev => ({ ...prev, products: false, orders: false, deliverers: false, customers: false, analytics: false }));
+  }
+};
 
   const formatPrice = (price) => {
     return 'UGX ' + price.toLocaleString();
@@ -116,32 +124,42 @@ const AdminPanel = ({ onBackToStore, darkMode, setDarkMode }) => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleAddDeliverer = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+ const handleAddDeliverer = async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  
+  try {
+    const delivererData = {
+      name: newDeliverer.name,
+      email: newDeliverer.email,
+      phone: newDeliverer.phone,
+      vehicle_type: newDeliverer.vehicleType,  // snake_case
+      license_plate: newDeliverer.licensePlate, // snake_case
+      area: newDeliverer.area,
+      status: 'active',
+      online: true
+    };
+
+    console.log('Sending deliverer data:', delivererData);
+    const response = await apiService.createDeliverer(delivererData);
     
-    try {
-      const response = await apiService.createDeliverer(newDeliverer);
-      if (response.success) {
-        setDeliverers([...deliverers, response.data]);
-        setShowAddDeliverer(false);
-        setNewDeliverer({
-          name: '',
-          email: '',
-          phone: '',
-          vehicleType: '',
-          licensePlate: '',
-          area: ''
-        });
-        showToast('Deliverer added successfully', 'success');
-      } else {
-        showToast(response.message || 'Failed to add deliverer', 'error');
-      }
-    } catch (error) {
-      console.error('Error adding deliverer:', error);
-      showToast('Failed to add deliverer', 'error');
-    }
-  };
+    // Update the deliverers list with the new deliverer
+    setDeliverers([...deliverers, response]);
+    setShowAddDeliverer(false);
+    setNewDeliverer({
+      name: '',
+      email: '',
+      phone: '',
+      vehicleType: '',
+      licensePlate: '',
+      area: ''
+    });
+    showToast('Deliverer added successfully', 'success');
+  } catch (error) {
+    console.error('Error adding deliverer:', error);
+    showToast(error.message || 'Failed to add deliverer', 'error');
+  }
+};
 
   const handleAddProduct = async (e) => {
     e.preventDefault();

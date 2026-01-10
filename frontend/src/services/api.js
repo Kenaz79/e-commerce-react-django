@@ -25,40 +25,63 @@ class ApiService {
     localStorage.removeItem('user');
   }
 
-  async request(endpoint, options = {}) {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    };
+ async request(endpoint, options = {}) {
+  const url = `${API_BASE_URL}${endpoint}`;
+  const config = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  };
 
-    if (this.token) {
-      config.headers.Authorization = `Bearer ${this.token}`;
-    }
-
-    try {
-      const response = await fetch(url, config);
-      
-      // Handle empty responses
-      if (response.status === 204) {
-        return null;
-      }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || `HTTP ${response.status}`);
-      }
-
-      return data;
-    } catch (error) {
-      console.error('API request failed:', error.message);
-      throw error;
-    }
+  if (this.token) {
+    config.headers.Authorization = `Bearer ${this.token}`;
   }
+
+  try {
+    console.log('Making request to:', url);
+    console.log('Request body:', options.body);
+    
+    const response = await fetch(url, config);
+    
+    // Handle empty responses
+    if (response.status === 204) {
+      return null;
+    }
+
+    // Try to parse response as JSON
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      const text = await response.text();
+      console.error('Failed to parse JSON. Response text:', text);
+      throw new Error(`Server returned invalid JSON: ${text}`);
+    }
+
+    console.log('Response status:', response.status);
+    console.log('Response data:', data);
+
+    if (!response.ok) {
+      // Extract error message from various Django error formats
+      const errorMessage = 
+        data.detail ||           // DRF generic error
+        data.message ||          // Custom error
+        data.error ||            // Custom error
+        data.non_field_errors?.[0] ||  // DRF validation error
+        JSON.stringify(data) ||  // Show full error object
+        `HTTP ${response.status}`;
+      
+      throw new Error(errorMessage);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+}
 
   // ==================== AUTH METHODS ====================
   async register(userData) {
@@ -341,15 +364,15 @@ class ApiService {
 
   // ==================== DELIVERER METHODS ====================
   async getDeliverers() {
-    return this.request('/deliverers');
+    return this.request('/deliverers/');
   }
 
   async getDeliverersForAdmin() {
-    return this.request('/admin/deliverers');
+    return this.request('/admin/deliverers/');
   }
 
   async createDeliverer(delivererData) {
-    return this.request('/admin/deliverers', {
+    return this.request('/admin/deliverers/', {
       method: 'POST',
       body: JSON.stringify(delivererData),
     });

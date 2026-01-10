@@ -21,72 +21,7 @@ let deliverers = [];
 let reviews = [];
 let addresses = [];
 let tickets = [];
-let promoCodes = [
-  { code: 'SAVE10', discount: 0.10, type: 'percentage', active: true },
-  { code: 'FLASH50', discount: 50000, type: 'fixed', active: true },
-  { code: 'WELCOME20', discount: 0.20, type: 'percentage', active: true }
-];
-
-// Sample initial data
-const initializeData = () => {
-  products = [
-    {
-      id: 1,
-      name: 'Samsung Galaxy S24 Ultra',
-      price: 3299000,
-      oldPrice: 3799000,
-      category: 'phones',
-      brand: 'Samsung',
-      image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&h=400&fit=crop',
-      rating: 4.5,
-      reviews: 234,
-      discount: 13,
-      inStock: true,
-      stock: 5,
-      views: 1250,
-      description: 'The Samsung Galaxy S24 Ultra features a stunning 6.8-inch display, powerful Snapdragon processor, and an incredible 200MP camera system.',
-      specs: ['256GB Storage', '12GB RAM', '200MP Camera', '5000mAh Battery', '5G Enabled'],
-      colors: ['Black', 'White', 'Purple'],
-      sizes: ['Standard'],
-      images: [
-        'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&h=800&fit=crop'
-      ],
-      flashSale: true,
-      flashSaleEnd: Date.now() + 3600000,
-      bulkDiscount: { quantity: 2, discount: 0.05 },
-      createdAt: new Date().toISOString()
-    },
-    // Add other sample products...
-  ];
-
-  categories = [
-    { id: 'all', name: 'All Products', icon: 'Menu' },
-    { id: 'electronics', name: 'Electronics', icon: 'Laptop' },
-    { id: 'phones', name: 'Phones', icon: 'Smartphone' },
-    { id: 'fashion', name: 'Fashion', icon: 'Shirt' },
-    { id: 'home', name: 'Home & Garden', icon: 'Home' },
-  ];
-
-  deliverers = [
-    {
-      id: 1,
-      name: 'James Mugisha',
-      email: 'james@deliveries.ug',
-      phone: '+256-700-111-222',
-      status: 'active',
-      joinDate: '2024-01-15',
-      totalDeliveries: 156,
-      vehicleType: 'Motorcycle',
-      licensePlate: 'UBA 123A',
-      area: 'Kampala Central',
-      rating: 4.8,
-      currentLocation: 'Nakasero',
-      online: true
-    }
-  ];
-};
+let promoCodes = [];
 
 // Middleware
 const authenticateToken = (req, res, next) => {
@@ -126,6 +61,8 @@ app.post('/api/auth/register', async (req, res) => {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+    const deliverersRoutes = require('./routes/deliverers');
+app.use('/api/admin/deliverers', deliverersRoutes);
 
     // Create user
     const user = {
@@ -199,25 +136,23 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Products Routes
+// Products Routes (Public)
 app.get('/api/products', (req, res) => {
   const { category, search, minPrice, maxPrice, minRating, sortBy } = req.query;
   
   let filteredProducts = [...products];
 
-  // Filter by category
+  // Apply filters
   if (category && category !== 'all') {
     filteredProducts = filteredProducts.filter(product => product.category === category);
   }
 
-  // Filter by search query
   if (search) {
     filteredProducts = filteredProducts.filter(product =>
       product.name.toLowerCase().includes(search.toLowerCase())
     );
   }
 
-  // Filter by price range
   if (minPrice) {
     filteredProducts = filteredProducts.filter(product => product.price >= parseInt(minPrice));
   }
@@ -225,12 +160,11 @@ app.get('/api/products', (req, res) => {
     filteredProducts = filteredProducts.filter(product => product.price <= parseInt(maxPrice));
   }
 
-  // Filter by rating
   if (minRating) {
     filteredProducts = filteredProducts.filter(product => product.rating >= parseFloat(minRating));
   }
 
-  // Sort products
+  // Sort
   if (sortBy) {
     switch (sortBy) {
       case 'priceLow':
@@ -266,7 +200,12 @@ app.get('/api/products/:id', (req, res) => {
   res.json(product);
 });
 
-app.post('/api/products', authenticateToken, isAdmin, (req, res) => {
+// Admin Products Routes
+app.get('/api/admin/products', authenticateToken, isAdmin, (req, res) => {
+  res.json(products);
+});
+
+app.post('/api/admin/products', authenticateToken, isAdmin, (req, res) => {
   try {
     const product = {
       id: products.length + 1,
@@ -283,7 +222,7 @@ app.post('/api/products', authenticateToken, isAdmin, (req, res) => {
   }
 });
 
-app.put('/api/products/:id', authenticateToken, isAdmin, (req, res) => {
+app.put('/api/admin/products/:id', authenticateToken, isAdmin, (req, res) => {
   const productIndex = products.findIndex(p => p.id === parseInt(req.params.id));
   if (productIndex === -1) {
     return res.status(404).json({ error: 'Product not found' });
@@ -293,7 +232,7 @@ app.put('/api/products/:id', authenticateToken, isAdmin, (req, res) => {
   res.json(products[productIndex]);
 });
 
-app.delete('/api/products/:id', authenticateToken, isAdmin, (req, res) => {
+app.delete('/api/admin/products/:id', authenticateToken, isAdmin, (req, res) => {
   const productIndex = products.findIndex(p => p.id === parseInt(req.params.id));
   if (productIndex === -1) {
     return res.status(404).json({ error: 'Product not found' });
@@ -303,118 +242,37 @@ app.delete('/api/products/:id', authenticateToken, isAdmin, (req, res) => {
   res.json({ message: 'Product deleted successfully' });
 });
 
-// Categories Routes
-app.get('/api/categories', (req, res) => {
-  res.json(categories);
-});
-
-// Orders Routes
-app.get('/api/orders', authenticateToken, (req, res) => {
-  let userOrders = orders;
-
-  // If not admin, only return user's orders
-  if (req.user.role !== 'admin') {
-    userOrders = orders.filter(order => order.userId === req.user.id);
-  }
-
-  res.json(userOrders);
-});
-
-app.get('/api/orders/:id', authenticateToken, (req, res) => {
-  const order = orders.find(o => o.orderNumber === req.params.id);
-  
-  if (!order) {
-    return res.status(404).json({ error: 'Order not found' });
-  }
-
-  // Check if user owns the order or is admin
-  if (order.userId !== req.user.id && req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Access denied' });
-  }
-
-  res.json(order);
-});
-
-app.post('/api/orders', authenticateToken, (req, res) => {
-  try {
-    const order = {
-      orderNumber: Math.random().toString(36).substr(2, 9).toUpperCase(),
-      userId: req.user.id,
-      ...req.body,
-      date: new Date().toISOString(),
-      status: 'Processing',
-      tracking: 'TRK' + Date.now()
-    };
-
-    orders.push(order);
-    res.status(201).json(order);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create order' });
-  }
-});
-
-app.put('/api/orders/:id/status', authenticateToken, isAdmin, (req, res) => {
-  const order = orders.find(o => o.orderNumber === req.params.id);
-  if (!order) {
-    return res.status(404).json({ error: 'Order not found' });
-  }
-
-  order.status = req.body.status;
-  res.json(order);
-});
-
-// Cart Routes
-app.get('/api/cart', authenticateToken, (req, res) => {
-  // In a real app, you'd store carts in the database
-  // For now, we'll return empty array - frontend handles cart state
-  res.json([]);
-});
-
-// Reviews Routes
-app.get('/api/products/:id/reviews', (req, res) => {
-  const productReviews = reviews.filter(review => review.productId === parseInt(req.params.id));
-  res.json(productReviews);
-});
-
-app.post('/api/products/:id/reviews', authenticateToken, (req, res) => {
-  try {
-    const review = {
-      id: uuidv4(),
-      productId: parseInt(req.params.id),
-      userId: req.user.id,
-      userName: req.user.name,
-      ...req.body,
-      date: new Date().toISOString()
-    };
-
-    reviews.push(review);
-
-    // Update product rating
-    const productReviews = reviews.filter(r => r.productId === parseInt(req.params.id));
-    const averageRating = productReviews.reduce((sum, r) => sum + r.rating, 0) / productReviews.length;
-    
-    const product = products.find(p => p.id === parseInt(req.params.id));
-    if (product) {
-      product.rating = averageRating;
-      product.reviews = productReviews.length;
-    }
-
-    res.status(201).json(review);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create review' });
-  }
-});
-
 // Deliverers Routes
 app.get('/api/deliverers', authenticateToken, isAdmin, (req, res) => {
   res.json(deliverers);
 });
 
-app.post('/api/deliverers', authenticateToken, isAdmin, (req, res) => {
+// CRITICAL: Add the endpoint your frontend is calling
+app.post('/api/admin/deliverers', authenticateToken, isAdmin, (req, res) => {
   try {
+    const { name, email, phone, vehicle_type, license_plate, area } = req.body;
+    
+    // Validate required fields
+    if (!name || !email || !phone || !vehicle_type || !license_plate || !area) {
+      return res.status(400).json({ 
+        error: 'All fields are required: name, email, phone, vehicle_type, license_plate, area' 
+      });
+    }
+
+    // Check if deliverer already exists
+    const existingDeliverer = deliverers.find(d => d.email === email);
+    if (existingDeliverer) {
+      return res.status(400).json({ error: 'Deliverer with this email already exists' });
+    }
+
     const deliverer = {
       id: deliverers.length + 1,
-      ...req.body,
+      name,
+      email,
+      phone,
+      vehicle_type,
+      license_plate,
+      area,
       status: 'active',
       joinDate: new Date().toISOString().split('T')[0],
       totalDeliveries: 0,
@@ -426,11 +284,12 @@ app.post('/api/deliverers', authenticateToken, isAdmin, (req, res) => {
     deliverers.push(deliverer);
     res.status(201).json(deliverer);
   } catch (error) {
+    console.error('Error creating deliverer:', error);
     res.status(500).json({ error: 'Failed to create deliverer' });
   }
 });
 
-app.put('/api/deliverers/:id/status', authenticateToken, isAdmin, (req, res) => {
+app.put('/api/admin/deliverers/:id/status', authenticateToken, isAdmin, (req, res) => {
   const deliverer = deliverers.find(d => d.id === parseInt(req.params.id));
   if (!deliverer) {
     return res.status(404).json({ error: 'Deliverer not found' });
@@ -440,9 +299,19 @@ app.put('/api/deliverers/:id/status', authenticateToken, isAdmin, (req, res) => 
   res.json(deliverer);
 });
 
+app.delete('/api/admin/deliverers/:id', authenticateToken, isAdmin, (req, res) => {
+  const delivererIndex = deliverers.findIndex(d => d.id === parseInt(req.params.id));
+  if (delivererIndex === -1) {
+    return res.status(404).json({ error: 'Deliverer not found' });
+  }
+
+  deliverers.splice(delivererIndex, 1);
+  res.json({ message: 'Deliverer deleted successfully' });
+});
+
 // Analytics Routes
-app.get('/api/analytics/overview', authenticateToken, isAdmin, (req, res) => {
-  const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+app.get('/api/admin/analytics', authenticateToken, isAdmin, (req, res) => {
+  const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
   const totalOrders = orders.length;
   const totalProducts = products.length;
   const totalCustomers = users.filter(user => user.role === 'customer').length;
@@ -459,14 +328,14 @@ app.get('/api/analytics/overview', authenticateToken, isAdmin, (req, res) => {
     
     monthlyRevenue.push({
       month: new Date(currentYear, month).toLocaleString('default', { month: 'short' }),
-      revenue: monthOrders.reduce((sum, order) => sum + order.total, 0)
+      revenue: monthOrders.reduce((sum, order) => sum + (order.total || 0), 0)
     });
   }
 
   // Top products
   const productSales = {};
   orders.forEach(order => {
-    order.items.forEach(item => {
+    order.items?.forEach(item => {
       if (!productSales[item.id]) {
         productSales[item.id] = { ...item, sales: 0, revenue: 0 };
       }
@@ -489,71 +358,108 @@ app.get('/api/analytics/overview', authenticateToken, isAdmin, (req, res) => {
   });
 });
 
-// Promo Codes Routes
-app.get('/api/promo-codes/:code', (req, res) => {
-  const promoCode = promoCodes.find(
-    promo => promo.code === req.params.code.toUpperCase() && promo.active
-  );
-  
-  if (!promoCode) {
-    return res.status(404).json({ error: 'Invalid promo code' });
-  }
-
-  res.json(promoCode);
+// Customers Routes
+app.get('/api/admin/customers', authenticateToken, isAdmin, (req, res) => {
+  const customers = users.filter(user => user.role === 'customer');
+  res.json(customers);
 });
 
-// Addresses Routes
-app.get('/api/addresses', authenticateToken, (req, res) => {
-  const userAddresses = addresses.filter(addr => addr.userId === req.user.id);
-  res.json(userAddresses);
+// Orders Routes
+app.get('/api/admin/orders', authenticateToken, isAdmin, (req, res) => {
+  res.json(orders);
 });
 
-app.post('/api/addresses', authenticateToken, (req, res) => {
-  try {
-    const address = {
-      id: uuidv4(),
-      userId: req.user.id,
-      ...req.body
-    };
-
-    addresses.push(address);
-    res.status(201).json(address);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create address' });
-  }
-});
-
-// Support Tickets Routes
-app.get('/api/tickets', authenticateToken, (req, res) => {
-  let userTickets = tickets;
-
+app.get('/api/orders', authenticateToken, (req, res) => {
+  let userOrders = orders;
   if (req.user.role !== 'admin') {
-    userTickets = tickets.filter(ticket => ticket.userId === req.user.id);
+    userOrders = orders.filter(order => order.userId === req.user.id);
   }
-
-  res.json(userTickets);
+  res.json(userOrders);
 });
 
-app.post('/api/tickets', authenticateToken, (req, res) => {
+app.post('/api/orders', authenticateToken, (req, res) => {
   try {
-    const ticket = {
-      id: 'TIC' + Date.now(),
+    const order = {
+      orderNumber: Math.random().toString(36).substr(2, 9).toUpperCase(),
       userId: req.user.id,
       ...req.body,
-      status: 'Open',
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      status: 'Processing',
+      tracking: 'TRK' + Date.now()
     };
 
-    tickets.push(ticket);
-    res.status(201).json(ticket);
+    orders.push(order);
+    res.status(201).json(order);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create ticket' });
+    res.status(500).json({ error: 'Failed to create order' });
   }
 });
 
-// Initialize data
-initializeData();
+// Purchase Analytics Route (for your frontend)
+app.get('/api/admin/analytics/purchases', authenticateToken, isAdmin, (req, res) => {
+  const analytics = {
+    byCategory: [],
+    byPriceRange: [
+      { range: 'UGX 0-100K', count: 45, percentage: 35 },
+      { range: 'UGX 100K-500K', count: 60, percentage: 46 },
+      { range: 'UGX 500K-1M', count: 15, percentage: 12 },
+      { range: 'UGX 1M+', count: 10, percentage: 7 }
+    ],
+    bySize: [
+      { size: 'S', count: 35 },
+      { size: 'M', count: 50 },
+      { size: 'L', count: 25 },
+      { size: 'XL', count: 10 }
+    ],
+    topCustomers: users.filter(u => u.role === 'customer').slice(0, 5).map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      totalOrders: Math.floor(Math.random() * 20) + 1,
+      totalSpent: Math.floor(Math.random() * 5000000) + 1000000
+    })),
+    salesTrend: [
+      { month: 'Jan', sales: 45 },
+      { month: 'Feb', sales: 52 },
+      { month: 'Mar', sales: 48 },
+      { month: 'Apr', sales: 61 },
+      { month: 'May', sales: 55 },
+      { month: 'Jun', sales: 72 }
+    ],
+    deliveryPerformance: [
+      { deliverer: 'James Mugisha', completed: 156, onTime: 142 },
+      { deliverer: 'Sarah Kim', completed: 89, onTime: 78 },
+      { deliverer: 'David Ochieng', completed: 112, onTime: 98 }
+    ]
+  };
+  
+  res.json(analytics);
+});
 
+// Initialize with one admin user for testing
+const initData = () => {
+  // Create default admin user
+  bcrypt.hash('admin123', 10, (err, hashedPassword) => {
+    if (err) {
+      console.error('Error creating admin user:', err);
+      return;
+    }
+    
+    users.push({
+      id: uuidv4(),
+      name: 'Admin User',
+      email: 'admin@example.com',
+      password: hashedPassword,
+      role: 'admin',
+      createdAt: new Date().toISOString()
+    });
+    
+    console.log('Admin user created: admin@example.com / admin123');
+  });
+};
+
+// Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  initData();
 });
