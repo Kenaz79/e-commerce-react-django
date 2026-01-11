@@ -27,3 +27,17 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = '__all__'
+        extra_kwargs = {
+            'image': {'required': False},  # Make image optional
+            'image_url': {'required': False},  # Make image_url optional
+        }
+        
+        read_only_fields = ['rating', 'reviews', 'created_at', 'updated_at', 'in_stock']
+        
+    
+    def create(self, validated_data):
+        # Handle image_url vs image field
+        if 'image_url' in validated_data and validated_data['image_url']:
+            # If image_url is provided, use it
+            pass
+        return super().create(validated_data)

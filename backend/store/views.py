@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.hashers import make_password
 from django.db import IntegrityError
-from .serializers import RegisterSerializer
-from rest_framework.permissions import AllowAny
+from .serializers import RegisterSerializer, ProductSerializer
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.parsers import JSONParser
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -13,7 +13,6 @@ from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import Product 
-from .serializers import ProductSerializer
 
 def main_page(request):
     if not request.session.get('is_verified'):
@@ -22,10 +21,35 @@ def main_page(request):
 
 
 class ProductListView(APIView):
+    # For GET requests - anyone can view products
+    # For POST requests - only authenticated admin users can create products
+    permission_classes = [AllowAny]  # Or [IsAuthenticated] for POST only
+     
     def get(self, request):
         products = Product.objects.all()
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
+    
+    def post(self, request):
+        # Check if user is authenticated (optional)
+        #if not request.user.is_authenticated:
+            #return Response(
+                #{'error': 'Authentication required to create products'},
+                #status=status.HTTP_401_UNAUTHORIZED
+            #)
+        
+        # Check if user is staff/admin (optional but recommended)
+        #if not request.user.is_staff:
+            #return Response(
+                #{'error': 'Only admin users can create products'},
+                #status=status.HTTP_403_FORBIDDEN
+            #)
+
+        serializer = ProductSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(APIView):
@@ -75,6 +99,7 @@ class RegisterView(APIView):
             return Response({'message': 'User registered successfully.'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class VerifyOTPView(APIView):
     permission_classes = [AllowAny]
     parser_classes = [JSONParser]

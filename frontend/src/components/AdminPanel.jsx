@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import AddProductModal from './AddProduct';
 import { 
   BarChart3, Settings, Users, Package, DollarSign, 
   ShoppingBag, Shield, CheckCircle, AlertTriangle, 
@@ -159,31 +160,46 @@ const handleAddDeliverer = async (e) => {
   }
 };
 
+const ProductsManagement = () => {
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    name: '',
+    price: '',
+    category: '',
+    brand: '',
+    description: '',
+    stock: '',
+    image: ''
+  });
+  
+  if (loading.products) return <LoadingSpinner />;
+
   const handleAddProduct = async (e) => {
     e.preventDefault();
     
     try {
+      // Convert price and stock to numbers
       const productData = {
-        ...newProduct,
-        price: parseInt(newProduct.price),
+        name: newProduct.name,
+        price: parseFloat(newProduct.price),
+        category: newProduct.category,
+        brand: newProduct.brand,
+        description: newProduct.description,
         stock: parseInt(newProduct.stock),
-        rating: 4.0,
-        reviews: 0,
-        inStock: true,
-        oldPrice: null,
-        discount: 0,
-        views: 0,
-        specs: [],
-        colors: [],
-        sizes: ['Standard'],
-        images: [newProduct.image],
-        flashSale: false,
-        bulkDiscount: null
+        image_url: newProduct.image,
+        in_stock: parseInt(newProduct.stock) > 0
       };
 
+      console.log('Sending product data:', productData);
+      
+      // Check if it's FormData (for file upload) or regular JSON
       const response = await apiService.createProduct(productData);
-      if (response.success) {
-        setProducts([...products, response.data]);
+      
+      console.log('Product response:', response);
+      
+      if (response.id) {
+        // Add the new product to the list
+        setProducts([...products, response]);
         setShowAddProduct(false);
         setNewProduct({
           name: '',
@@ -200,15 +216,111 @@ const handleAddDeliverer = async (e) => {
       }
     } catch (error) {
       console.error('Error adding product:', error);
-      showToast('Failed to add product', 'error');
+      showToast(error.message || 'Failed to add product', 'error');
     }
   };
 
-  const updateDelivererStatus = async (delivererId, status) => {
-    try {
-      const response = await apiService.updateDelivererStatus(delivererId, status);
-      if (response.success) {
-        setDeliverers(deliverers.map(deliverer => 
+  return (
+    <div className="space-y-6 dark:text-white">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold dark:text-white">Products Management</h2>
+        <div className="flex gap-3">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            {products.length} products total
+          </div>
+          <button
+            onClick={() => setShowAddProduct(true)}
+            className="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Product
+          </button>
+        </div>
+      </div>
+
+      {/* Add Product Modal */}
+      {showAddProduct && (
+        <AddProductModal
+          newProduct={newProduct}
+          setNewProduct={setNewProduct}
+          handleAddProduct={handleAddProduct}
+          setShowAddProduct={setShowAddProduct}
+          darkMode={darkMode}
+        />
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {products.map((product) => (
+          <div key={product.id} className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
+            <div className="relative h-48 overflow-hidden">
+              <img 
+                src={product.image || 'https://images.unsplash.com/photo-1556656793-08538906a9f8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'} 
+                alt={product.name} 
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                onError={(e) => {
+                  e.target.src = 'https://images.unsplash.com/photo-1556656793-08538906a9f8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60';
+                }}
+              />
+              {!product.in_stock && (
+                <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+                  Out of Stock
+                </div>
+              )}
+            </div>
+            <div className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-semibold text-lg dark:text-white truncate">{product.name}</h3>
+                <span className="text-cyan-600 dark:text-cyan-400 font-bold whitespace-nowrap">{formatPrice(product.price)}</span>
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
+                {product.category} • {product.brand}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-500 mb-3 line-clamp-2">
+                {product.description}
+              </p>
+              <div className="flex items-center justify-between text-sm mb-4">
+                <div className="flex items-center gap-1">
+                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  <span className="dark:text-gray-300">{product.rating || '4.0'}</span>
+                  <span className="text-gray-500 dark:text-gray-500">({product.reviews || 0})</span>
+                </div>
+                <span className={`px-2 py-1 rounded-full text-xs ${
+                  product.in_stock ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                }`}>
+                  {product.in_stock ? `${product.stock} in stock` : 'Out of stock'}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => toggleProductStatus(product.id)}
+                  className={`flex-1 py-2 rounded-lg font-semibold text-sm ${
+                    product.in_stock 
+                      ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
+                      : 'bg-green-500 hover:bg-green-600 text-white'
+                  }`}
+                >
+                  {product.in_stock ? 'Disable' : 'Enable'}
+                </button>
+                <button
+                  onClick={() => deleteProduct(product.id)}
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold text-sm"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const updateDelivererStatus = async (delivererId, status) => {
+  try {
+    const response = await apiService.updateDelivererStatus(delivererId, status);
+    if (response.success) {
+      setDeliverers(deliverers.map(deliverer => 
           deliverer.id === delivererId ? { ...deliverer, status, online: status === 'active' } : deliverer
         ));
         showToast(`Deliverer ${status}`, 'success');
@@ -672,7 +784,7 @@ const handleAddDeliverer = async (e) => {
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg dark:text-white">{deliverer.name}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{deliverer.vehicleType}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{deliverer.vehicle_type}</p>
                     </div>
                   </div>
                   <div className={`w-3 h-3 rounded-full ${deliverer.online ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
@@ -685,7 +797,7 @@ const handleAddDeliverer = async (e) => {
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Car className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    <span className="dark:text-gray-300">{deliverer.licensePlate}</span>
+                    <span className="dark:text-gray-300">{deliverer.vehicle_type}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400" />
@@ -890,74 +1002,6 @@ const handleAddDeliverer = async (e) => {
     );
   };
 
-  const ProductsManagement = () => {
-    if (loading.products) return <LoadingSpinner />;
-
-    return (
-      <div className="space-y-6 dark:text-white">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold dark:text-white">Products Management</h2>
-          <div className="flex gap-3">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              {products.length} products total
-            </div>
-            <button
-              onClick={() => setShowAddProduct(true)}
-              className="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add Product
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <div key={product.id} className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-              <img src={product.image} alt={product.name} className="w-full h-48 object-cover" />
-              <div className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-lg dark:text-white">{product.name}</h3>
-                  <span className="text-cyan-600 dark:text-cyan-400 font-bold">{formatPrice(product.price)}</span>
-                </div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">{product.category} • {product.brand}</p>
-                <div className="flex items-center justify-between text-sm mb-4">
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="dark:text-gray-300">{product.rating}</span>
-                    <span className="text-gray-500 dark:text-gray-500">({product.reviews})</span>
-                  </div>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    product.inStock ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                  }`}>
-                    {product.inStock ? `${product.stock} in stock` : 'Out of stock'}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => toggleProductStatus(product.id)}
-                    className={`flex-1 py-2 rounded-lg font-semibold text-sm ${
-                      product.inStock 
-                        ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
-                        : 'bg-green-500 hover:bg-green-600 text-white'
-                    }`}
-                  >
-                    {product.inStock ? 'Disable' : 'Enable'}
-                  </button>
-                  <button
-                    onClick={() => deleteProduct(product.id)}
-                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold text-sm"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
 
   const adminTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },

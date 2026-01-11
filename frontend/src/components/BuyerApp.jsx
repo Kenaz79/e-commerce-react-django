@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Search, Menu, Heart, User, Star, TrendingUp, Smartphone, Laptop, Home, Shirt, X, ArrowLeft, Plus, Minus, Package, CreditCard, MapPin, Phone, Mail, Filter, SortAsc, Eye, Clock, Gift, Percent, MessageCircle, Bell, Sun, Moon, ChevronRight, Share2, Truck, Download, Zap, Users, Tag, Check, Shield } from 'lucide-react';
+import { ShoppingCart, Search, Menu, Heart, User, Star, TrendingUp, Smartphone, Laptop, Home, Shirt, X, ArrowLeft, Plus, Minus, Package, CreditCard, MapPin, Phone, Mail, Filter, SortAsc, Eye, Clock, Gift, Percent, MessageCircle, Bell, Sun, Moon, ChevronRight, Share2, Truck, Download, Zap, Users, Tag, Check, Shield, EyeOff } from 'lucide-react';
 import AdminPanel from './AdminPanel';
 import { apiService } from '../services/api';
 
@@ -523,29 +523,66 @@ function BuyerApp() {
     );
   };
 
-  const AuthModal = () => {
+ const AuthModal = () => {
+    const [showLoginPassword, setShowLoginPassword] = useState(false);
+    const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [passwordsMatch, setPasswordsMatch] = useState(true);
+    const [formError, setFormError] = useState('');
+    
     if (!showAuthModal) return null;
+
+    const validatePasswords = (password, confirmPassword) => {
+        const match = password === confirmPassword;
+        setPasswordsMatch(match);
+        return match;
+    };
 
     const handleAuth = async (e) => {
       e.preventDefault();
+      setFormError('');
       
       try {
         let response;
         if (authMode === 'login') {
           const email = document.getElementById('login-email').value;
           const password = document.getElementById('login-password').value;
-          response = await apiService.login(email, password);
+          response = await apiService.login({ email, password }); // Changed to object
         } else {
           const name = document.getElementById('register-name').value;
           const email = document.getElementById('register-email').value;
           const password = document.getElementById('register-password').value;
-          response = await apiService.register({ name, email, password });
+          const confirmPassword = document.getElementById('register-confirm-password').value;
+          
+          // Validate passwords match
+          if (!validatePasswords(password, confirmPassword)) {
+            setFormError('Passwords do not match');
+            return;
+          }
+          
+          // Use username field instead of name for Django
+          response = await apiService.register({ 
+            username: name.split(' ')[0] || name, // Use first name as username
+            name, 
+            email, 
+            password, 
+            confirm_password: confirmPassword 
+          });
         }
         
-        if (response.success) {
-          setUser(response.data.user);
-          apiService.setToken(response.data.token);
-          localStorage.setItem('user', JSON.stringify(response.data.user));
+        // Handle response based on your API structure
+        if (response.token || response.access) { // Check for token instead of response.success
+          const token = response.token || response.access;
+          const user = response.user || {
+            id: response.id,
+            username: response.username,
+            email: response.email,
+            name: response.name || response.username
+          };
+          
+          setUser(user);
+          apiService.setToken(token);
+          localStorage.setItem('user', JSON.stringify(user));
           setShowAuthModal(false);
           showToast(authMode === 'login' ? 'Logged in successfully!' : 'Account created!', 'success');
           
@@ -560,11 +597,15 @@ function BuyerApp() {
           setAddresses(addressesData);
           setTickets(ticketsData);
         } else {
-          showToast(response.message || 'Authentication failed', 'error');
+          const errorMessage = response.detail || response.message || 'Authentication failed';
+          showToast(errorMessage, 'error');
+          setFormError(errorMessage);
         }
       } catch (error) {
         console.error('Authentication error:', error);
-        showToast('Authentication failed', 'error');
+        const errorMessage = error.message || 'Authentication failed';
+        showToast(errorMessage, 'error');
+        setFormError(errorMessage);
       }
     };
 
@@ -572,43 +613,118 @@ function BuyerApp() {
       <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4">
         <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg max-w-md w-full p-6`}>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">{authMode === 'login' ? 'Login' : 'Create Account'}</h2>
-            <button onClick={() => setShowAuthModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
-              <X className="w-6 h-6" />
+            <h2 className="text-2xl font-bold dark:text-white">{authMode === 'login' ? 'Login' : 'Create Account'}</h2>
+            <button 
+              onClick={() => {
+                setShowAuthModal(false);
+                setFormError('');
+                setPasswordsMatch(true);
+              }} 
+              className="p-2 dark:bg-gray-700 rounded-lg"
+            >
+              <X className="w-6 h-6 dark:text-white" />
             </button>
           </div>
+          
+          {formError && (
+            <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg">
+              {formError}
+            </div>
+          )}
+          
           <form onSubmit={handleAuth} className="space-y-4">
             {authMode === 'register' && (
-              <input
-                id="register-name"
-                type="text"
-                placeholder="Full Name"
-                required
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500"
-              />
+              <div>
+                <input
+                  id="register-name"
+                  type="text"
+                  placeholder="Full Name"
+                  required
+                  className="w-full px-4 py-2 border dark:border-gray-700 dark:bg-gray-300 dark:text-black rounded-lg focus:ring-2 focus:ring-cyan-500 placeholder-gray-800 dark:placeholder-gray-600"
+                />
+              </div>
             )}
-            <input
-              id={authMode === 'login' ? 'login-email' : 'register-email'}
-              type="email"
-              placeholder="Email"
-              required
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500"
-            />
-            <input
-              id={authMode === 'login' ? 'login-password' : 'register-password'}
-              type="password"
-              placeholder="Password"
-              required
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500"
-            />
-            <button type="submit" className="w-full bg-cyan-500 hover:bg-cyan-600 text-white py-3 rounded-lg font-bold">
-              {authMode === 'login' ? 'Login' : 'Register'}
+            
+            <div>
+              <input
+                id={authMode === 'login' ? 'login-email' : 'register-email'}
+                type="email"
+                placeholder="Email"
+                required
+                className="w-full px-4 py-2 border dark:border-gray-600 dark:bg-gray-300 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500 placeholder-gray-800 dark:placeholder-gray-600"
+              />
+            </div>
+            
+            <div className="relative">
+              <input
+                id={authMode === 'login' ? 'login-password' : 'register-password'}
+                type={authMode === 'login' ? (showLoginPassword ? 'text' : 'password') : (showRegisterPassword ? 'text' : 'password')}
+                placeholder="Password"
+                required
+                className="w-full px-4 py-2 border dark:border-gray-700 dark:bg-gray-300 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500 pr-10 placeholder-gray-800 dark:placeholder-gray-600"
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400"
+                onClick={() => authMode === 'login' 
+                  ? setShowLoginPassword(!showLoginPassword) 
+                  : setShowRegisterPassword(!showRegisterPassword)
+                }
+              >
+                {authMode === 'login' 
+                  ? (showLoginPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />)
+                  : (showRegisterPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />)
+                }
+              </button>
+            </div>
+            
+            {authMode === 'register' && (
+              <div>
+                <div className="relative">
+                  <input
+                    id="register-confirm-password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Confirm Password"
+                    required
+                    className={`w-full px-4 py-2 border dark:border-gray-700 dark:bg-gray-300 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500 pr-10 placeholder-gray-800 dark:placeholder-gray-600 ${
+                      !passwordsMatch ? 'border-red-500 dark:border-red-500' : ''
+                    }`}
+                    onChange={(e) => {
+                      const password = document.getElementById('register-password').value;
+                      validatePasswords(password, e.target.value);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {!passwordsMatch && (
+                  <p className="text-red-500 text-sm mt-1">Passwords do not match</p>
+                )}
+              </div>
+            )}
+            
+            <button 
+              type="submit" 
+              className="w-full bg-cyan-500 hover:bg-cyan-600 text-white py-3 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={authMode === 'register' && !passwordsMatch}
+            >
+              {authMode === 'login' ? 'Login' : 'Create Account'}
             </button>
           </form>
-          <p className="text-center mt-4 text-sm">
+          
+          <p className="text-center mt-4 text-sm dark:text-gray-500">
             {authMode === 'login' ? "Don't have an account? " : "Already have an account? "}
             <button
-              onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+              onClick={() => {
+                setAuthMode(authMode === 'login' ? 'register' : 'login');
+                setFormError('');
+                setPasswordsMatch(true);
+              }}
               className="text-cyan-500 font-semibold hover:underline"
             >
               {authMode === 'login' ? 'Register' : 'Login'}

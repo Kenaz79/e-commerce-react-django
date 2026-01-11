@@ -50,14 +50,28 @@ class ApiService {
       return null;
     }
 
-    // Try to parse response as JSON
+    // Clone the response before reading
+    const responseClone = response.clone();
+    
     let data;
+    let errorText = '';
+    
     try {
       data = await response.json();
     } catch (parseError) {
-      const text = await response.text();
-      console.error('Failed to parse JSON. Response text:', text);
-      throw new Error(`Server returned invalid JSON: ${text}`);
+      // If JSON parsing fails, try reading as text from the clone
+      try {
+        errorText = await responseClone.text();
+        console.error('Failed to parse JSON. Response text:', errorText);
+      } catch (textError) {
+        errorText = 'Could not read response body';
+      }
+      
+      // Create a proper error object with the text response
+      const error = new Error(`Server returned invalid JSON: ${errorText}`);
+      error.responseText = errorText;
+      error.status = response.status;
+      throw error;
     }
 
     console.log('Response status:', response.status);
@@ -73,44 +87,82 @@ class ApiService {
         JSON.stringify(data) ||  // Show full error object
         `HTTP ${response.status}`;
       
-      throw new Error(errorMessage);
+      const error = new Error(errorMessage);
+      error.status = response.status;
+      error.responseData = data;
+      throw error;
     }
 
     return data;
   } catch (error) {
-    console.error('API request failed:', error);
+    console.error('API request failed:', {
+      message: error.message,
+      url: url,
+      status: error.status,
+      responseText: error.responseText,
+      responseData: error.responseData
+    });
+    
+    // Rethrow with better error handling for 404
+    if (error.message.includes('404') || error.status === 404) {
+      const improvedError = new Error(`Endpoint not found: ${url}. Please check if the backend server is running and the endpoint exists.`);
+      improvedError.status = 404;
+      improvedError.originalError = error;
+      throw improvedError;
+    }
+    
     throw error;
   }
 }
 
   // ==================== AUTH METHODS ====================
-  async register(userData) {
-    const data = await this.request('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
-    if (data.token) {
-      this.setToken(data.token);
-      this.setUser(data.user);
-    }
-    return data;
+  // ==================== AUTH METHODS ====================
+async register(userData) {
+  const djangoUserData = {
+    username: userData.name || userData.username || userData.email,
+    email: userData.email,
+    password: userData.password,
+    confirm_password: userData.password // Django wants password confirmation
+  };
+   console.log('Sending registration data:', djangoUserData);
+  // Try without trailing slash first
+  const data = await this.request('/register/', {  // Removed trailing slash
+    method: 'POST',
+    body: JSON.stringify(djangoUserData),
+  });
+  if (data.token) {
+    this.setToken(data.token);
+    this.setUser(data.user);
+     console.log('Response contains token?', !!data.token);
+  console.log('Response contains user?', !!data.user);
+  console.log('Full response keys:', Object.keys(data));
+  
+  return data;
   }
+  return data;
+}
 
-  async login(credentials) {
-    const data = await this.request('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
-    if (data.token) {
-      this.setToken(data.token);
-      this.setUser(data.user);
-    }
-    return data;
+async login(credentials) {
+   const djangoCredentials = credentials.username 
+    ? { username: credentials.username, password: credentials.password }
+    : { email: credentials.email, password: credentials.password };
+  console.log('Sending login data:', djangoCredentials);
+  // Try without trailing slash first
+  const data = await this.request('/login/', {  // Removed trailing slash
+    method: 'POST',
+    body: JSON.stringify(djangoCredentials),
+  });
+  if (data.token) {
+    this.setToken(data.token);
+    this.setUser(data.user);
   }
+  return data;
+}
 
+ 
   async logout() {
     this.removeToken();
-    return this.request('/auth/logout', { method: 'POST' });
+    return this.request('/auth/logout/', { method: 'POST' });
   }
 
   async getCurrentUser() {
@@ -127,7 +179,7 @@ class ApiService {
     });
     
     const queryString = params.toString();
-    const endpoint = queryString ? `/products?${queryString}` : '/products';
+    const endpoint = queryString ? `/products?${queryString}` : '/products/';
     return this.request(endpoint);
   }
 
@@ -145,14 +197,14 @@ class ApiService {
     });
     
     const queryString = params.toString();
-    const endpoint = queryString ? `/admin/products?${queryString}` : '/admin/products';
+    const endpoint = queryString ? `/products?${queryString}` : '/products';
     return this.request(endpoint);
   }
 
   async createProduct(productData) {
     // Handle FormData for file uploads
     if (productData instanceof FormData) {
-      const url = `${API_BASE_URL}/admin/products`;
+      const url = `${API_BASE_URL}/products/`;
       const config = {
         method: 'POST',
         headers: {
@@ -162,35 +214,35 @@ class ApiService {
       };
       return fetch(url, config).then(res => res.json());
     }
-    
-    return this.request('/admin/products', {
+
+    return this.request('/products/', {
       method: 'POST',
       body: JSON.stringify(productData),
     });
   }
 
   async updateProduct(id, productData) {
-    return this.request(`/admin/products/${id}`, {
+    return this.request(`/products/${id}`, {
       method: 'PUT',
       body: JSON.stringify(productData),
     });
   }
 
   async deleteProduct(id) {
-    return this.request(`/admin/products/${id}`, {
+    return this.request(`/products/${id}`, {
       method: 'DELETE',
     });
   }
 
   async toggleProductVisibility(id, visible) {
-    return this.request(`/admin/products/${id}/visibility`, {
+    return this.request(`/products/${id}/visibility`, {
       method: 'PATCH',
       body: JSON.stringify({ visible }),
     });
   }
 
   async updateProductStock(id, stock) {
-    return this.request(`/admin/products/${id}/stock`, {
+    return this.request(`/products/${id}/stock`, {
       method: 'PATCH',
       body: JSON.stringify({ stock }),
     });
