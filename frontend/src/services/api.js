@@ -367,19 +367,19 @@ async login(credentials) {
     });
     
     const queryString = params.toString();
-    const endpoint = queryString ? `/admin/orders?${queryString}` : '/admin/orders';
+    const endpoint = queryString ? `/orders?${queryString}` : '/orders';
     return this.request(endpoint);
   }
 
   async updateOrderStatus(orderNumber, status, notes = '') {
-    return this.request(`/admin/orders/${orderNumber}/status`, {
+    return this.request(`/orders/${orderNumber}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status, notes }),
     });
   }
 
   async assignOrderToDeliverer(orderNumber, delivererId) {
-    return this.request(`/admin/orders/${orderNumber}/assign`, {
+    return this.request(`/orders/${orderNumber}/assign`, {
       method: 'PUT',
       body: JSON.stringify({ delivererId }),
     });
@@ -420,32 +420,32 @@ async login(credentials) {
   }
 
   async getDeliverersForAdmin() {
-    return this.request('/admin/deliverers/');
+    return this.request('/deliverers/');
   }
 
   async createDeliverer(delivererData) {
-    return this.request('/admin/deliverers/', {
+    return this.request('/deliverers/', {
       method: 'POST',
       body: JSON.stringify(delivererData),
     });
   }
 
   async updateDelivererStatus(delivererId, online) {
-    return this.request(`/admin/deliverers/${delivererId}/status`, {
+    return this.request(`/deliverers/${delivererId}/status`, {
       method: 'PUT',
       body: JSON.stringify({ online }),
     });
   }
 
   async deleteDeliverer(delivererId) {
-    return this.request(`/admin/deliverers/${delivererId}`, {
+    return this.request(`/deliverers/${delivererId}`, {
       method: 'DELETE',
     });
   }
 
   // ==================== ANALYTICS METHODS ====================
   async getAnalytics() {
-    return this.request('/admin/analytics');
+    return this.request('/analytics');
   }
 
   async getSalesReport(startDate, endDate) {
@@ -454,7 +454,7 @@ async login(credentials) {
     if (endDate) params.append('endDate', endDate);
     
     const queryString = params.toString();
-    const endpoint = queryString ? `/admin/analytics/sales?${queryString}` : '/admin/analytics/sales';
+    const endpoint = queryString ? `/analytics/sales?${queryString}` : '/analytics/sales';
     return this.request(endpoint);
   }
 
